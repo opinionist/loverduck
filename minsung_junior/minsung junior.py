@@ -4,6 +4,10 @@ import asyncio
 import sqlite3
 from itertools import combinations
 from discord.ext import commands
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -59,7 +63,9 @@ async def helpasdf(x, *, message=None):
     elif(message == "start" or  message == "st" or message == "스타트" or message =="시작"):
         await x.author.send("```ansi\n이 명령어는 간단하게 팀에 있는 사람수에 비례해 참가한 사람에게 coin을 지급하는 명령어입니다.\n같은 명령어 = [4;1m스타트[0m [4;1m시작[0m [4;1mstart[0m [4;1mst[0m```")
     elif(message == "프로필" or message == "prf" or message == "profile"):
-        await x.author.send("```ansi\n이 명령어는 자신의 개인프로필을 확인 및 수정하는 명령어 입니다\n 같은 명령어 = 프로필 prf proflie```")
+        await x.author.send("```ansi\n이 명령어는 자신의 개인프로필을 확인 및 수정하는 명령어 입니다\n같은 명령어 = 프로필 prf proflie```")
+    elif(message == "tire" or message == "티어" or message == "tr"):
+        await x.author.send("```ansi\n이 명령어는 러버덕의 모든 사람들의 티어를 출력하는 명령어 입니다.\n같은 명령어 = 티어 tr tire```")
     else:
         await x.author.send("```ansi\n[31;1m존재하지 않는 명령어입니다.[0m```")
 
@@ -440,7 +446,7 @@ async def tire(ctx):
                 tire_group_info.append(f"[1;30m{i}Tire")
                 
             for info in tire_group:
-                info_str = f"이름: {info[0]} / 티어: {info[1]}Tire \n MP: {info[4]} / SP: {info[5]} / intro: {info[6]}\n"
+                info_str = f"이름: {info[0]} / 티어: {info[1]} Tire \n MP: {info[4]} / SP: {info[5]} / intro: {info[6]}\n"
                 tire_group_info.append(info_str)
             tire_group_info.append("```")
             tire_groups[i] = tire_group_info
@@ -459,6 +465,8 @@ async def tire(ctx):
                 tire_group_info.append(f"[1;30m{i}Tire")
             tire_group_info.append("존재하지 않습니다.```")
             tire_groups[i] = tire_group_info
+
+            
 
     # 한 변수에 모든 티어별 그룹 정보를 저장하여 전송
     for i in range(1, 6):
@@ -703,9 +711,12 @@ async def on_command_error(ctx, error):
         
 @client.event#블랙리스트
 async def on_message(message):
-    blacklist = []
+    blacklist = [640894329942719850]
     if message.author.id in blacklist:
         return  # 블랙리스트에 있는 사용자는 봇 명령을 무시
     await client.process_commands(message)
         
-client.run("MTE0Mzc4NzUzMTIwOTU1NjAwOQ.GNCsSJ.QrMXNvZInBWebA6ArJAW8i7ATw2LjyPORPVzwU")
+
+
+minsung_junior = os.getenv('MINSUNGJUNIOR')
+client.run(minsung_junior)

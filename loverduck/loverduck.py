@@ -4,6 +4,10 @@ import asyncio
 import sqlite3
 from itertools import combinations
 from discord.ext import commands
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -285,29 +289,39 @@ async def rdasdf(ctx):
             elif data[6] in user_id2:
                 cursor.execute('INSERT INTO team_two (name, tire, point, position, subposition, intro, ID) VALUES(?,?,?,?,?,?,?)', data,)
                 commit()
-        cursor.execute('SELECT name FROM team_one')
+        cursor.execute('SELECT * FROM team_one')
         team_one_data = cursor.fetchall()
-        cursor.execute('SELECT name FROM team_two')
+        cursor.execute('SELECT * FROM team_two')
         team_two_data = cursor.fetchall()
 
         team_one_members = '\n'.join([data[0] for data in team_one_data])
         team_two_members = '\n'.join([data[0] for data in team_two_data])
-
+        
+        cursor.execute('SELECT ID FROM team_one')
+        toI = cursor.fetchall()
+        cursor.execute('SELECT ID FROM team_two')
+        ttI = cursor.fetchall()
+        
+        
+        
         await ctx.send(f'```ansi\n[1;31mTeam 1[0m [1;31;4m\n{team_one_members}[0m```')
         await ctx.send(f'```ansi\n[1;34mTeam 2[0m [1;34;4m\n{team_two_members}[0m```')
         all_voice_channels = ctx.guild.voice_channels
             
         for voice_channel in all_voice_channels:
-            for member in voice_channel.members:
-                member_id = member.id
-                if (member_id,) in team_one_data:
-                    target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방")
-                    if target_channel: 
-                        await member.move_to(target_channel)
-                elif (member_id,) in team_two_data:
-                    target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방2")
-                    if target_channel:
-                        await member.move_to(target_channel)
+            for member in voice_channel.members :
+                member_ID = member.id
+                for i in range(5):
+                    toI[i] = toI[i]
+                    ttI[i] = ttI[i]
+                    if member_ID in toI[i] :
+                        target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방")
+                        if target_channel:
+                            await member.move_to(target_channel)
+                    elif member_ID in ttI[i] :
+                        target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방2")
+                        if target_channel:
+                            await member.move_to(target_channel)
     else:
         await ctx.send("end명령어를 사용해 주세요.")
 
@@ -422,9 +436,7 @@ async def prfasdf(ctx,*,message = None):
 @client.command(aliases=["티어", "tr"], name="tire")
 @commands.cooldown(1, 3, commands.BucketType.default)
 async def tire(ctx):
-    await ctx.author.send("현재 러버덕의 모든 사람들의 티어를 알려드리겠습니다.")
-
-    tire_groups = {}  # 티어별 그룹을 저장할 딕셔너리 생성
+    tire_groups = {}
     
     for i in range(1, 6):
         cursor.execute(f'SELECT * FROM fight WHERE tire - {i} < 1 and tire - {i} >= 0 ORDER BY tire')
@@ -445,7 +457,7 @@ async def tire(ctx):
                 tire_group_info.append(f"[1;30m{i}Tire")
                 
             for info in tire_group:
-                info_str = f"이름: {info[0]} / 티어: {info[1]}Tire \n MP: {info[4]} / SP: {info[5]} / intro: {info[6]}\n"
+                info_str = f"이름: {info[0]} / 티어: {info[1]} Tire \nMP: {info[4]} / SP: {info[5]} / intro: {info[6]}\n"
                 tire_group_info.append(info_str)
             tire_group_info.append("```")
             tire_groups[i] = tire_group_info
@@ -462,7 +474,7 @@ async def tire(ctx):
                 tire_group_info.append(f"[1;33m{i}Tire")
             if i == 5:
                 tire_group_info.append(f"[1;30m{i}Tire")
-            tire_group_info.append("존재하지 않습니다.```")
+            tire_group_info.append("```존재하지 않습니다.```")
             tire_groups[i] = tire_group_info
             
     for i in range(1, 6):
@@ -480,4 +492,5 @@ async def on_message(message):
         return  # 블랙리스트에 있는 사용자는 봇 명령을 무시
     await client.process_commands(message)
 
-client.run("MTE0MzgxMTM1Mjg1OTc4NzQyNg.G-ucIA.QVOofbaF7WFn9ao4UayCJiSfh-3B9juW854bmM")
+loverduck_token = os.getenv('LOVERDUCK')
+client.run(loverduck_token)
