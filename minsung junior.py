@@ -4,6 +4,10 @@ import asyncio
 import sqlite3
 from itertools import combinations
 from discord.ext import commands
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -712,4 +716,7 @@ async def on_message(message):
         return  # 블랙리스트에 있는 사용자는 봇 명령을 무시
     await client.process_commands(message)
         
-client.run("MTE0Mzc4NzUzMTIwOTU1NjAwOQ.GNCsSJ.QrMXNvZInBWebA6ArJAW8i7ATw2LjyPORPVzwU")
+
+
+minsung_junior = os.getenv('MINSUNGJUNIOR')
+client.run(minsung_junior)
