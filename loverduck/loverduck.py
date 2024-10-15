@@ -38,8 +38,10 @@ def fight():
 @client.command(aliases=["메뉴얼","도움말","mn","manual"],name='help')#명령어에 대해서 설명해주는 명령어
 async def helpasdf(x, *, message=None):
     if message is None:
+        command = client.get_command('help')
+        aliases = command.aliases
         await x.author.send("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n4.end\n5.start\n6.list\n7.replace\n8.displace\n9.coin\n10.profile\n11.gamble(만드는 중...)\n12.auction(만드는 중...)```")
-        await x.author.send("```ansi\n명령어들은 각각 영어 발음, 영어 약어, 영어 의미(한글)로 사용할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m$메뉴얼 / $도움말 / $help / $mn +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help end / $mn st```")
+        await x.author.send(f"```ansi\n명령어들은 각각 영어 발음, 영어 약어, 영어 의미(한글)로 사용할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m${aliases[0]} / ${aliases[1]} / ${aliases[2]} / ${aliases[3]} +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help end / $mn st```")
     elif(message == "in" or message == "인" or message == "참가"):
         await x.author.send("```ansi\n이 명령어는 게임에 참가하는 명령어입니다.\n같은 명령어 = [4;1m인[0m [4;1m참가[0m [4;1min[0m```")
     elif(message == "out" or message == "아웃" or message == "퇴장"):
@@ -493,4 +495,7 @@ async def on_message(message):
     await client.process_commands(message)
 
 loverduck_token = os.getenv('LOVERDUCK')
-client.run(loverduck_token)
+try:
+    client.run(loverduck_token)
+except:
+    print(loverduck_token)
