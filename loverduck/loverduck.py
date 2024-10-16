@@ -179,7 +179,7 @@ async def endasdf(x,*,message=None):
     else:
         await x.send("명령어 형식이 잘못되었거나 지금 팀에 아무도 없습니다.")
 
-@client.command(aliases=["포함", "rpl", "리플레이스"],name='replace')#플레이어를 포함시키는 명령어
+@client.command(aliases=["포함", "rep", "리플레이스"],name='replace')#플레이어를 포함시키는 명령어
 async def rplasdf(ctx, *, message=None):  
     global en_allowed
     if message is None:
@@ -209,7 +209,7 @@ async def rplasdf(ctx, *, message=None):
             await ctx.send(f"**{user_nickname}**님을 게임에 추가합니다.")
             en_allowed = False
 
-@client.command(aliases=["dsp", "제외", "디스플레이스"],name='displace')#플레이어를 제외시키는 명령어
+@client.command(aliases=["dis", "제외", "디스플레이스"],name='displace')#플레이어를 제외시키는 명령어
 async def dipasdf(x, *, message=None):
     if message is None:
         await x.author.send("```이 명령어는 남을 대신 추가시키는 명령어입니다. ex) $displace @귀차니즘 러덕```")
