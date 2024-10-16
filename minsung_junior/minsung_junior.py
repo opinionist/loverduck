@@ -425,7 +425,7 @@ async def prfasdf(ctx,*,message = None):
 async def tire(ctx):
     await ctx.author.send("현재 러버덕의 모든 사람들의 티어를 알려드리겠습니다.")
 
-    tire_groups = {}  # 티어별 그룹을 저장할 딕셔너리 생성
+    tire_groups = {}
 
     for i in range(1, 6):
         cursor.execute(f'SELECT * FROM fight WHERE tire - {i} < 1 and tire - {i} >= 0 ORDER BY tire')
@@ -465,147 +465,140 @@ async def tire(ctx):
                 tire_group_info.append(f"[1;30m{i}Tire")
             tire_group_info.append("존재하지 않습니다.```")
             tire_groups[i] = tire_group_info
-
-            
-
-    # 한 변수에 모든 티어별 그룹 정보를 저장하여 전송
     for i in range(1, 6):
         await ctx.author.send("\n".join(tire_groups[i]))
-
-    
-    
             
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# @client.command(aliases=["도박","겜블","gb"],name="gamble")
-# async def gbasdf(ctx, *, message=None):
-#     users = ctx.author.display_name
-#     cursor.execute("SELECT coin FROM fight WHERE name = ?", (users,))
-#     money =  cursor.fetchone()
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+@client.command(aliases=["도박","겜블","gb"],name="gamble")
+async def gb(ctx, *, message=None):
+    users = ctx.author.display_name
+    cursor.execute("SELECT coin FROM fight WHERE name = ?", (users,))
+    money =  cursor.fetchone()
     
-#     if money is None:
-#         await ctx.send("아에 참가한 적이 없습니다 $in을 치세요.")
-#     elif money[0] == 0:
-#         await ctx.send("자본이... 부족한데?")
-#     else:
-#         if message is None:
-#             await ctx.author.send("```java\n명령어의 종류 \n1.in : 게임에 참가하는 명령업니다.\n같은 명령어 : in / 인 / 참가\n2.out : 게임에 퇴장하는 명령업니다.\n같은 명령어 : out / 아웃 / 퇴장\n3.money : 게임에 걸린 돈들을 보는 명령어입니다.\n같은 명령어 :  money / mn / 머니 / 판돈\n4.bet : 게임에 돈을 거는 명령업니다.\n같은 명령어 : bet / 배팅 / 걸기\n5.list : 지금 도박에 참여한 사람들을 확인하는 명령업니다.\n같은 명령어 : list / ls / 리스트 / 인원\n6.start : 러시안 룰렛을 시작하는 명령업니다.\n같은 명령어 : start / st / 스타트 / 시작```")
-#         elif (message == "in" or message == "참가" or message == "인"): #참가하는 명령어
-#             cursor.execute('SELECT * FROM gamble WHERE name = ?', (users,))
-#             player = cursor.fetchone()
-#             if player:
-#                 await ctx.send("이미 참가되어 있습니다.")
-#             else:
-#                 await ctx.send(f"러시안 룰렛에 **{users}**님이 참가합니다.")
-#                 cursor.execute('INSERT INTO gamble (name,coin) SELECT name, coin FROM fight WHERE name = ?', (users,))
-#                 commit()
+    if money is None:
+        await ctx.send("아에 참가한 적이 없습니다 $in을 치세요.")
+    elif money[0] == 0:
+        await ctx.send("돈이 없습니다.")
+    else:
+        if message is None:
+            await ctx.author.send("```java\n명령어의 종류 \n1.in : 게임에 참가하는 명령업니다.\n같은 명령어 : in / 인 / 참가\n2.out : 게임에 퇴장하는 명령업니다.\n같은 명령어 : out / 아웃 / 퇴장\n3.money : 게임에 걸린 돈들을 보는 명령어입니다.\n같은 명령어 :  money / mn / 머니 / 판돈\n4.bet : 게임에 돈을 거는 명령업니다.\n같은 명령어 : bet / 배팅 / 걸기\n5.list : 지금 도박에 참여한 사람들을 확인하는 명령업니다.\n같은 명령어 : list / ls / 리스트 / 인원\n6.start : 러시안 룰렛을 시작하는 명령업니다.\n같은 명령어 : start / st / 스타트 / 시작```")
+        elif (message == "in" or message == "참가" or message == "인"): #참가하는 명령어
+            cursor.execute('SELECT * FROM gamble WHERE name = ?', (users,))
+            player = cursor.fetchone()
+            if player:
+                await ctx.send("이미 참가되어 있습니다.")
+            else:
+                await ctx.send(f"러시안 룰렛에 **{users}**님이 참가합니다.")
+                cursor.execute('INSERT INTO gamble (name,coin) values(?,?)', (users,money))
+                commit()
                 
-#         elif (message == "out" or message == "아웃" or message == "퇴장"):#게임에서 나가는 명령어
-#             cursor.execute('SELECT * FROM gamble WHERE name = ?', (users,))
-#             out_fighter = cursor.fetchone()
+        elif (message == "out" or message == "아웃" or message == "퇴장"):#게임에서 나가는 명령어
+            cursor.execute('SELECT * FROM gamble WHERE name = ?', (users,))
+            out_fighter = cursor.fetchone()
     
-#             if out_fighter:
-#                 cursor.execute('DELETE FROM gamble WHERE name = ?', (users,))
-#                 commit()
-#                 await ctx.send(f'야 쫄리냐? **{users}**??')
-#             else:
-#                 await ctx.send(f'있지도 않잖아 **{users}**') 
+            if out_fighter:
+                cursor.execute('DELETE FROM gamble WHERE name = ?', (users,))
+                commit()
+                await ctx.send(f'**{users}**님이 게임에서 이탈합니다..??')
+            else:
+                await ctx.send(f'참여하지 않는 사람은 나가실 수 없습니다.**{users}**') 
                 
-#         elif (message == "money" or message == "mn" or message == "판돈" or message == "머니"):#게임의 판돈을 보는 명령어
-#             cursor.execute('SELECT SUM(money) FROM gamble')
-#             game_money = cursor.fetchone()
+        elif (message == "money" or message == "mn" or message == "판돈" or message == "머니"):#게임의 판돈을 보는 명령어
+            cursor.execute('SELECT SUM(money) FROM gamble')
+            game_money = cursor.fetchone()
             
-#             if game_money[0] == 0:
-#                 await ctx.send("판돈이 없다")
-#             else:
-#                 await ctx.send(f"이 게임의 판돈 : {game_money[0]}")
+            if game_money[0] == 0:
+                await ctx.send("걸린 돈이 없습니다.")
+            else:
+                await ctx.send(f"이 한 게임의 판돈 : {game_money[0]}")
                 
-#         elif (message == "bet" or message == "걸기" or message == "배팅"):#게임에 돈을 거는 명령어
-#             await ctx.send("얼마를 걸겁니까?")
+        elif (message == "bet" or message == "걸기" or message == "배팅"):#게임에 돈을 거는 명령어
+            await ctx.send("얼마를 걸겁니까?")
 
-#             def check(message):
-#                 return message.author == ctx.author
-#             try:
-#                 bet_message = await client.wait_for("message", check=check, timeout=10)
-#                 bet_amount = bet_message.content
+            def check(message):
+                return message.author == ctx.author
+            try:
+                bet_message = await client.wait_for("message", check=check, timeout=10)
+                bet_amount = bet_message.content
 
-#                 if not bet_amount.isdigit():
-#                     await ctx.send("숫자여야 합니다.")
-#                 else:
-#                     bet_amount = int(bet_amount)
-#                     cursor.execute('SELECT coin FROM gamble WHERE name = ?', (users,))
-#                     your_money = cursor.fetchone()[0]
+                if not bet_amount.isdigit():
+                    await ctx.send("숫자여야 합니다.")
+                else:
+                    bet_amount = int(bet_amount)
+                    cursor.execute('SELECT coin FROM gamble WHERE name = ?', (users,))
+                    your_money = cursor.fetchone()[0]
 
-#                     if bet_amount > your_money:
-#                         await ctx.send("자본이 부족합니다.")
-#                     elif bet_amount <= 0:
-#                         await ctx.send("0 또는 음수는 불가능합니다.")
-#                     else:
-#                         await ctx.send(f"배팅 금액: **{bet_amount}**coin")
-#                         cursor.execute('UPDATE gamble SET coin = ? WHERE name = ?', (your_money - bet_amount, users,))
-#                         commit()
-#                         cursor.execute('SELECT money FROM gamble WHERE name = ?', (users,))
-#                         your_bet = cursor.fetchone()
-#                         cursor.execute('UPDATE gamble SET money = ? WHERE name = ?', (your_bet[0]+bet_amount, users,))
-#                         commit()
-#                         await ctx.send(f"**{users}**님의 남은 코인: **{your_money - bet_amount}**coin")
-#             except asyncio.TimeoutError:
-#                 await ctx.send("시간이 초과되었습니다. 베팅이 취소되었습니다.")
+                    if bet_amount > your_money:
+                        await ctx.send("자본이 부족합니다.")
+                    elif bet_amount <= 0:
+                        await ctx.send("0 또는 음수는 불가능합니다.")
+                    else:
+                        await ctx.send(f"배팅 금액: **{bet_amount}**coin")
+                        cursor.execute('UPDATE gamble SET coin = ? WHERE name = ?', (your_money - bet_amount, users,))
+                        commit()
+                        cursor.execute('SELECT money FROM gamble WHERE name = ?', (users,))
+                        your_bet = cursor.fetchone()
+                        cursor.execute('UPDATE gamble SET money = ? WHERE name = ?', (your_bet[0]+bet_amount, users,))
+                        commit()
+                        await ctx.send(f"**{users}**님의 남은 코인: **{your_money - bet_amount}**coin")
+            except asyncio.TimeoutError:
+                await ctx.send("시간이 초과되었습니다. 베팅이 취소되었습니다.")
                 
-#         elif (message == "list" or message == "ls" or message == "리스트" or message == "인원"):#게임에 참가한 사람들 보여주기
-#             cursor.execute('SELECT name FROM gamble')
-#             mamber = cursor.fetchall()
+        elif (message == "list" or message == "ls" or message == "리스트" or message == "인원"):#게임에 참가한 사람들 보여주기
+            cursor.execute('SELECT name FROM gamble')
+            mamber = cursor.fetchall()
             
-#             gamble_mm = '\n'.join([data[0] for data in mamber])
-#             await ctx.send(f"```러시안 룰렛에 참가한 자들: \n{gamble_mm}```")
+            gamble_mm = '\n'.join([data[0] for data in mamber])
+            await ctx.send(f"```게임에 참여한 사람들 \n{gamble_mm}```")
         
-#         elif (message == "start" or message == "st" or message == "시작" or message == "스타트"):  # 도박 시작
-#             cursor.execute('SELECT * FROM gamble')
-#             members = cursor.fetchall()
-#             num = len(members)
+        elif (message == "start" or message == "st" or message == "시작" or message == "스타트"):  # 도박 시작
+            cursor.execute('SELECT * FROM gamble')
+            members = cursor.fetchall()
+            num = len(members)
 
-#             if num is None:
-#                 await ctx.send("참가한 사람이 없습니다.")
-#             elif num > 1:
-#                 persent = 7
-#                 await ctx.send(f"참가한 인원 {num}명\n게임을 시작하겠습니다.")
-#                 own = random.choice(members)
-#                 while True:
-#                     await ctx.send(f"{own[0]}님? 누구를 쏘실건가요?")
-#                     def cheak(message):
-#                         return message.author == own[0]
-#                     try:
-#                         gb_msg = await client.wait_for("message", check=cheak, timeout=10)
-#                         gb_am = gb_msg.content
-#                         gb_kl = gb_am.replace('@', '')
-#                         kill = gb_kl.display_name
-#                         unluck = random.randrange(1, persent)
-#                         luck = random.randrange(1, persent)
-#                         if (unluck == luck):
-#                             await ctx.send(f"{kill}님이 사망하셨습니다. 아쉬워라")
-#                             persent = 7
-#                         else:
-#                             persent -= 1
-#                             await ctx.send(f"{kill}님이 살아남으셨습니다. 남은 확률{persent}분의 1")
-#                             own = kill
-#                         cursor.execute('SELECT * FROM gamble')
-#                         surviber = cursor.fetchall()
-#                         serve = len(surviber)
-#                         if (serve == 1):
-#                             await ctx.send(f"축하합니다. {surviber[0]}님 당신은 살아남으셨습니다.")
-#                     except asyncio.TimeoutError:
-#                         if (unluck == luck):
-#                             await ctx.send(f"{own}님이 자신을 쐈고 그 결과는 참혹했습니다.")
-#                             persent = 7
-#                         else:
-#                             await ctx.send(f"{own}님이 살아남으셨습니다.")
-#                             persent -= 1
-#                     if (serve == 1):
-#                         break
-#                 return  # 게임 종료 후 더 이상 진행하지 않도록 리턴
-#             else:
-#                 await ctx.author.send("혼자서는 자살밖에 못합니다.")
-#         else:#오타나 다른거 치면 나오는 에러 잡는거
-#             await ctx.send("잘못된 명령어")
+            if num is None:
+                await ctx.send("참가한 사람이 없습니다.")
+            elif num > 1:
+                persent = 7
+                await ctx.send(f"참가한 인원 {num}명\n게임을 시작하겠습니다.")
+                own = random.choice(members)
+                while True:
+                    await ctx.send(f"{own[0]}님? 누구를 쏘실건가요?")
+                    def cheak(message):
+                        return message.author == own[0]
+                    try:
+                        gb_msg = await client.wait_for("message", check=cheak, timeout=10)
+                        gb_am = gb_msg.content
+                        gb_kl = gb_am.replace('@', '')
+                        kill = gb_kl.display_name
+                        unluck = random.randrange(1, persent)
+                        luck = random.randrange(1, persent)
+                        if (unluck == luck):
+                            await ctx.send(f"{kill}님이 사망하셨습니다. 아쉬워라")
+                            persent = 7
+                        else:
+                            persent -= 1
+                            await ctx.send(f"{kill}님이 살아남으셨습니다. 남은 확률{persent}분의 1")
+                            own = kill
+                        cursor.execute('SELECT * FROM gamble')
+                        surviber = cursor.fetchall()
+                        serve = len(surviber)
+                        if (serve == 1):
+                            await ctx.send(f"축하합니다. {surviber[0]}님 당신은 살아남으셨습니다.")
+                    except asyncio.TimeoutError:
+                        if (unluck == luck):
+                            await ctx.send(f"{own}님이 자신을 쐈고 그 결과는 참혹했습니다.")
+                            persent = 7
+                        else:
+                            await ctx.send(f"{own}님이 살아남으셨습니다.")
+                            persent -= 1
+                    if (serve == 1):
+                        break
+                return  # 게임 종료 후 더 이상 진행하지 않도록 리턴
+            else:
+                await ctx.author.send("혼자서는 자살밖에 못합니다.")
+        else:#오타나 다른거 치면 나오는 에러 잡는거
+            await ctx.send("잘못된 명령어")
 #러시안 룰렛 이건 나중에 업데이트 할것. 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
