@@ -50,11 +50,11 @@ async def helpasdf(x, *, message=None):
         await x.author.send("```ansi\n이 명령어는 누가 이겼는지를 입력받아 coin을 지급하는 명령어입니다.\n내전을 완전히 끝냈을 땐 [1m$end real[0m 명령어를 사용해주 세요\n같은 명령어 = [4;1m엔드[0m [4;1m종료[0m [4;1mend[0m```")
     elif(message == "random" or message == "섞기" or message == "랜덤" or message == "rd"):
         await x.author.send("```ansi\n이 명령어는 팀을 섞은 후 통화방을 나누는 명령어입니다.\n같은 명령어 = [4;1m랜덤[0m [4;1m섞기[0m [4;1mrandom[0m [4;1mrd[0m```")
-    elif(message == "replace" or message == "rpl" or message == "포함" or message == "리플레이스"):
+    elif(message == "replace" or message == "rep" or message == "포함" or message == "리플레이스"):
         await x.author.send("```ansi\n이 명령어는 플레이어를 대신 참가시키는 명령어입니다.\n같은 명령어 = [4;1m리플레이스[0m [4;1m포함[0m [4;1mreplace[0m [4;1mrep[0m\n[1;31m매우[0m [1;31m중요!![0m [1;31m이[0m [1;31m명령어를[0m [1;31m악용할시[0m [1;31m이[0m [1;31m봇을[0m [1;31m사용할[0m [1;31m수[0m [1;31m없을[0m [1;31m수도[0m [1;31m있습니다!!![0m```")
     elif(message == "list" or message == "리스트" or message == "ls" or message == "인원"):
         await x.author.send("```ansi\n이 명령어는 현재 팀을 출력해주는 명령어입니다.\n같은 명령어 = [4;1m리스트[0m [4;1m인원[0m [4;1mlist[0m [4;1mls[0m```")
-    elif(message == "displace" or message == "dsp" or message =="제외" or message == "디스플레이스"):
+    elif(message == "displace" or message == "dis" or message =="제외" or message == "디스플레이스"):
         await x.author.send("```ansi\n이 명령어는 플레이어를 대신 제외시키는 명령어입니다.\n같은 명령어 = [4;1m디스플레이스[0m [4;1m제외[0m [4;1mdisplace[0m [4;1mdip[0m\n[1;31m매우[0m [1;31m중요!![0m [1;31m이[0m [1;31m명령어를[0m [1;31m악용할시[0m [1;31m이[0m [1;31m봇을[0m [1;31m사용할[0m [1;31m수[0m [1;31m없을[0m [1;31m수도[0m [1;31m있습니다!!![0m```")
     elif(message == "coin" or message == "ci" or message =="코인"):
         await x.author.send("```ansi\n이 명령어는 현재 당신의 코인들을 알려주는 명령업니다.\n코인은 내전을 하시면 늘어나고 [4;1m도박[0m을 하시면 늘거나 줄어들 수 있습니다.\n코인은 나중에 [4;1m경매[0m를 할때 사용이 가능하십니다.\n같은 명령어 = [4;1m코인[0m [4;1mcoin[0m [4;1mci[0m```")
@@ -495,7 +495,4 @@ async def on_message(message):
     await client.process_commands(message)
 
 loverduck_token = os.getenv('LOVERDUCK')
-try:
-    client.run(loverduck_token)
-except:
-    print(loverduck_token)
+client.run(loverduck_token)
