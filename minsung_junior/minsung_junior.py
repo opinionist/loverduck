@@ -52,7 +52,7 @@ async def helpasdf(x, *, message=None):
         await x.author.send("```ansi\n이 명령어는 플레이어를 대신 참가시키는 명령어입니다.\n같은 명령어 = [4;1m리플레이스[0m [4;1m포함[0m [4;1mreplace[0m [4;1mrep[0m\n[1;31m매우[0m [1;31m중요!![0m [1;31m이[0m [1;31m명령어를[0m [1;31m악용할시[0m [1;31m이[0m [1;31m봇을[0m [1;31m사용할[0m [1;31m수[0m [1;31m없을[0m [1;31m수도[0m [1;31m있습니다!!![0m```")
     elif(message == "list" or message == "리스트" or message == "ls" or message == "인원"):
         await x.author.send("```ansi\n이 명령어는 현재 팀을 출력해주는 명령어입니다.\n같은 명령어 = [4;1m리스트[0m [4;1m인원[0m [4;1mlist[0m [4;1mls[0m```")
-    elif(message == "displace" or message == "dip" or message =="제외" or message == "디스플레이스"):
+    elif(message == "displace" or message == "dis" or message =="제외" or message == "디스플레이스"):
         await x.author.send("```ansi\n이 명령어는 플레이어를 대신 제외시키는 명령어입니다.\n같은 명령어 = [4;1m디스플레이스[0m [4;1m제외[0m [4;1mdisplace[0m [4;1mdip[0m\n[1;31m매우[0m [1;31m중요!![0m [1;31m이[0m [1;31m명령어를[0m [1;31m악용할시[0m [1;31m이[0m [1;31m봇을[0m [1;31m사용할[0m [1;31m수[0m [1;31m없을[0m [1;31m수도[0m [1;31m있습니다!!![0m```")
     elif(message == "coin" or message == "ci" or message =="코인"):
         await x.author.send("```ansi\n이 명령어는 현재 당신의 코인들을 알려주는 명령업니다.\n코인은 내전을 하시면 늘어나고 [4;1m도박[0m을 하시면 늘거나 줄어들 수 있습니다.\n코인은 나중에 [4;1m경매[0m를 할때 사용이 가능하십니다.\n같은 명령어 = [4;1m코인[0m [4;1mcoin[0m [4;1mci[0m```")
@@ -207,7 +207,7 @@ async def repasdf(ctx, *, message=None):
             await ctx.send(f"**{user_nickname}**님을 게임에 추가합니다.")
             en_allowed = False
 
-@client.command(aliases=["dip", "제외", "디스플레이스"],name='displace')#플레이어를 제외시키는 명령어
+@client.command(aliases=["dis", "제외", "디스플레이스"],name='displace')#플레이어를 제외시키는 명령어
 async def dipasdf(x, *, message=None):
     if message is None or message[1] != "@":
         await x.send("명령어의 형식이 잘못되었습니다. 올바른 형식은 '$displace @{플레이어}' 입니다.")
@@ -559,7 +559,7 @@ async def gb(ctx, *, message=None):
             if num is None:
                 await ctx.send("참가한 사람이 없습니다.")
             elif num > 1:
-                persent = 7
+                persent = num
                 await ctx.send(f"참가한 인원 {num}명\n게임을 시작하겠습니다.")
                 own = random.choice(members)
                 while True:
@@ -570,20 +570,18 @@ async def gb(ctx, *, message=None):
                         gb_msg = await client.wait_for("message", check=cheak, timeout=10)
                         gb_am = gb_msg.content
                         gb_kl = gb_am.replace('@', '')
-                        kill = gb_kl.display_name
                         unluck = random.randrange(1, persent)
                         luck = random.randrange(1, persent)
                         if (unluck == luck):
-                            await ctx.send(f"{kill}님이 사망하셨습니다. 아쉬워라")
+                            await ctx.send(f"{gb_kl}님이 사망하셨습니다. 아쉬워라")
                             persent = 7
                         else:
                             persent -= 1
-                            await ctx.send(f"{kill}님이 살아남으셨습니다. 남은 확률{persent}분의 1")
-                            own = kill
+                            await ctx.send(f"{gb_kl}님이 살아남으셨습니다. 남은 확률{persent}분의 1")
+                            own[0] = gb_kl
                         cursor.execute('SELECT * FROM gamble')
                         surviber = cursor.fetchall()
-                        serve = len(surviber)
-                        if (serve == 1):
+                        if (len(surviber) == 1):
                             await ctx.send(f"축하합니다. {surviber[0]}님 당신은 살아남으셨습니다.")
                     except asyncio.TimeoutError:
                         if (unluck == luck):
@@ -596,7 +594,7 @@ async def gb(ctx, *, message=None):
                         break
                 return  # 게임 종료 후 더 이상 진행하지 않도록 리턴
             else:
-                await ctx.author.send("혼자서는 자살밖에 못합니다.")
+                await ctx.author.send("혼자서는 게임을 못 합니다.")
         else:#오타나 다른거 치면 나오는 에러 잡는거
             await ctx.send("잘못된 명령어")
 #러시안 룰렛 이건 나중에 업데이트 할것. 
