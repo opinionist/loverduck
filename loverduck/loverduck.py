@@ -15,11 +15,6 @@ client = commands.Bot(command_prefix='$', intents=intents, help_command = None)
 conn = sqlite3.connect('DateBase.db')
 cursor = conn.cursor()
 
-rd_allowed = True #random명렁어를 제어하는거
-st_allowed = False #start new명령어를 제어하는거
-en_allowed = False #end명령어를 제어하는거(real 제외)
-lk_allowed = False #start like명령어를 제어하는거
-
 def fightfind(user):
     cursor.execute("SELECT * FROM fight WHERE ID = ?", (user,))
     
