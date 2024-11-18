@@ -242,7 +242,7 @@ async def coinasdf(ctx):
     result = cursor.fetchone()
     
     if result is None:
-        await ctx.author.send("게임에 참가한 적이 없네요?")
+        await ctx.author.send("게임에 참가한 적이 없습니다.")
     else:
         your_coin = result[0]
         await ctx.author.send(f"{user}님의 코인: {your_coin}coin") 
