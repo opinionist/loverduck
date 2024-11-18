@@ -15,11 +15,6 @@ client = commands.Bot(command_prefix='%', intents=intents, help_command = None)
 conn = sqlite3.connect('Test.db')
 cursor = conn.cursor()
 
-rd_allowed = True #random명렁어를 제어하는거
-st_allowed = False #start new명령어를 제어하는거
-en_allowed = False #end명령어를 제어하는거(real 제외)
-lk_allowed = False #start like명령어를 제어하는거
-
 def fightfind(user):
     cursor.execute("SELECT * FROM fight WHERE ID = ?", (user,))
     
@@ -38,14 +33,12 @@ def fight():
 @client.command(aliases=["메뉴얼", "hl","도움말",""],name='help')#명령어에 대해서 설명해주는 명령어
 async def helpasdf(x, *, message=None):
     if message is None:
-        await x.author.send("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n4.end\n5.start\n6.list\n7.replace\n8.displace\n9.coin(만드는 중...)\n10.gamble(만드는 중...)\n11.auction(만드는 중...)\n12.profile(만드는 중...)```")
-        await x.author.send("```ansi\n명령어들은 각각 한글, 영어(줄임말) 영어의미로 할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m$메뉴얼 / $도움말 / $help / $hl +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help end / $mu cl```")
+        await x.author.send("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n6.list\n7.replace\n8.displace\n9.coin(만드는 중...)\n10.gamble(만드는 중...)\n11.auction(만드는 중...)\n12.profile(만드는 중...)```")
+        await x.author.send("```ansi\n명령어들은 각각 한글, 영어(줄임말) 영어의미로 할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m$메뉴얼 / $도움말 / $help / $hl +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help rd / $mu tire```")
     elif(message == "in" or message == "인" or message == "참가"):
         await x.author.send("```ansi\n이 명령어는 게임에 참가하는 명령어입니다.\n같은 명령어 = [4;1m인[0m [4;1m참가[0m [4;1min[0m```")
     elif(message == "out" or message == "아웃" or message == "퇴장"):
         await x.author.send("```ansi\n이 명령어는 참가한 게임에서 퇴장하는 명령어입니다.\n같은 명령어 = [4;1m아웃[0m [4;1m퇴장[0m [4;1mout[0m```")
-    elif(message == "end" or message == "종료" or message =="엔드"):
-        await x.author.send("```ansi\n이 명령어는 누가 이겼는지를 입력받아 coin을 지급하는 명령어입니다.\n내전을 완전히 끝냈을 땐 [1m$end real[0m 명령어를 사용해주 세요\n같은 명령어 = [4;1m엔드[0m [4;1m종료[0m [4;1mend[0m```")
     elif(message == "random" or message == "섞기" or message == "랜덤" or message == "rd"):
         await x.author.send("```ansi\n이 명령어는 팀을 섞은 후 통화방을 나누는 명령어입니다.\n같은 명령어 = [4;1m랜덤[0m [4;1m섞기[0m [4;1mrandom[0m [4;1mrd[0m```")
     elif(message == "replace" or message == "rep" or message == "포함" or message == "리플레이스"):
@@ -60,8 +53,6 @@ async def helpasdf(x, *, message=None):
         await x.author.send("```ansi\n이 명령어는 코인을 사용해 러시안 룰렛을 하는 여러가지 추가 명령이 있는 명령업니다.\n아이디어:[4;1m최주찬[0m\n추가 명령어를 보고싶다면 [4;1m$gb[0m를 치시면 됩니다.\n주의:도박중독은 [4;1m1336[0m\n같은 명령어 = [4;1m겜블[0m [4;1m도박[0m [4;1mgamble[0m [4;1mgb[0m```")
     elif(message == "auction" or message == "경매" or message == "옥션" or message == "at"):
         await x.author.send("```ansi\n이 명령어는 경매를 통해 자신이 원하는 사람을 자신의 내전 팀으로 옮기는 여러가지 명령어를 가진 명령어입니다.\n이 명령어에 자세하게 알고싶다면 [4;1m$auction[0m을 사용해 확인하세요.\n같은 명령어 = [4;1m옥션[0m [4;1m경매[0m [4;1mauction[0m [4;1mat[0m```")
-    elif(message == "start" or  message == "st" or message == "스타트" or message =="시작"):
-        await x.author.send("```ansi\n이 명령어는 간단하게 팀에 있는 사람수에 비례해 참가한 사람에게 coin을 지급하는 명령어입니다.\n같은 명령어 = [4;1m스타트[0m [4;1m시작[0m [4;1mstart[0m [4;1mst[0m```")
     elif(message == "프로필" or message == "prf" or message == "profile"):
         await x.author.send("```ansi\n이 명령어는 자신의 개인프로필을 확인 및 수정하는 명령어 입니다\n같은 명령어 = 프로필 prf proflie```")
     elif(message == "tire" or message == "티어" or message == "tr"):
@@ -107,77 +98,6 @@ async def outasdf(ctx):
         await ctx.send(f'**{users}**님이 게임에서 퇴장하였습니다.')
     else:
         await ctx.send(f'**{users}**님은 게임에 참여해 있지 않습니다.') 
-
-@client.command(aliases=["종료", "엔드"], name="end")#참가한 인원을 초기화시키는 명령어
-async def endasdf(x,*,message=None):
-    global rd_allowed
-    global st_allowed
-    global en_allowed
-    global lk_allowed
-    
-    team(team="team_one")
-    team_one = cursor.fetchall()
-    team(team="team_two")
-    team_two = cursor.fetchall()
-    
-    if message is None:
-        await x.author.send("```ansi\n이 명령어는 이긴팀의 번호를 써 이긴팀에게 더 많은 [1;4mcoin[0m을 제공하거나 팀들을 초기화하는 명령어입니다.```")
-    elif(message == "real" or message =="ra" or message == "정말" or message == "리얼"):
-        cursor.execute('DELETE FROM team')
-        cursor.execute('DELETE FROM team_one')
-        cursor.execute('DELETE FROM team_two')
-        commit()
-        rd_allowed = True
-        st_allowed = False
-        en_allowed = False
-        lk_allowed = False
-        await x.send("데이터베이스가 초기화 되었습니다.")
-    elif (message == "1" or message == "one" or message == "하나" or message == "일"):
-        if(st_allowed):
-            en_allowed = False
-            st_allowed = False
-            rd_allowed = True
-            
-            cursor.execute('SELECT ID FROM team_one')
-            teamer_one = [record[0] for record in cursor.fetchall()]
-            for user_id in teamer_one:
-                cursor.execute('UPDATE fight SET coin = coin + ? WHERE ID = ?', (len(team_one)*60,user_id,))
-                commit()
-            
-            cursor.execute('SELECT ID FROM team_two')
-            teamer_two = [record[0] for record in cursor.fetchall()]
-            for user_id in teamer_two:
-                cursor.execute('UPDATE fight SET coin = coin + ? WHERE ID = ?', (len(team_two)*20,user_id,))
-                commit()
-                
-            await x.send("1팀이 승리했습니다")
-        else:
-            await x.send("start명령어를 사용해야 가능합니다.")
-    elif (message == "2" or message == "이" or message == "two" or message == "둘"):
-        if(st_allowed):
-            en_allowed = False
-            st_allowed = False
-            rd_allowed = True
-            
-            cursor.execute('SELECT ID FROM team_two')
-            teamer_two = [record[0] for record in cursor.fetchall()]
-            
-            for user_id in teamer_two:
-                cursor.execute('UPDATE fight SET coin = coin + ? WHERE ID = ?', (len(team_two)*60,user_id,))
-                commit()
-            
-            cursor.execute('SELECT ID FROM team_one')
-            teamer_one = [record[0] for record in cursor.fetchall()]
-            
-            for user_id in teamer_one:
-                cursor.execute('UPDATE fight SET coin = coin + ? WHERE ID = ?', (len(team_one)*20,user_id,))
-                commit()
-                
-            await x.send("2팀이 승리했습니다.")
-        else:
-            await x.send("start명령어를 사용해야 가능합니다.")
-    else:
-        await x.send("명령어 형식이 잘못되었거나 지금 팀에 아무도 없습니다.")
 
 @client.command(aliases=["포함", "rep", "리플레이스"],name='replace')#플레이어를 포함시키는 명령어
 async def repasdf(ctx, *, message=None):  
@@ -313,50 +233,6 @@ async def rdasdf(ctx):
     else:
         await ctx.send("end명령어를 사용해 주세요.")
 
-@client.command(aliases=["시작","st","스타트"], name="start")
-async def stasdf(x,*,message=None):
-    global rd_allowed
-    global st_allowed
-    global lk_allowed
-    global en_allowed
-    cursor.execute('SELECT ID FROM team')
-    teamer = [record[0] for record in cursor.fetchall()]
-    
-    if(message is None):
-        await x.author.send("```ansi\n이 명령어는 플레이를 하는 사람에게 coin을 주기위한 명령어입니다.\nstart의 명령어 : [1;4mnew[0m or [1;4msame[0m가 있습니다.\n[1;4mnew[0m는 [1m팀이 rd로 인해 달라졌을때 사용하시면 됩니다.[0m\n[1;4msame[0m는 [1m저번 팀이랑 달라진게 없을때나 한두명만 바뀌었을때 사용하면 됩니다[0m```")
-    elif(message == 'new' or message == '뉴' or message == '다른'):
-        if(en_allowed):
-            if(st_allowed):
-                await x.send("end명령어를 사용하세요.")
-            else:
-                if len(teamer) % 2 == 0:
-                    await x.send("지금 팀으로 시작합니다.")
-                    rd_allowed = False
-                    st_allowed = True
-                    lk_allowed = True
-                    for user_id in teamer:
-                        cursor.execute('UPDATE fight SET coin = coin + ? WHERE ID = ?', (len(teamer)/2*100,user_id))
-                        commit()
-                else:
-                    await x.send("사람 수가 안 맞습니다.")
-        else:
-            await x.send("random명령어를 사용하세요.")
-            
-    elif(message == 'same' or message == "샘" or message == "sm" or message == "닮은"):
-        if(lk_allowed):
-            if(st_allowed):
-                await x.send("end명령어를 사용하세요.")
-            else:
-                await x.send("지금 팀으로 시작합니다.")
-                rd_allowed = False
-                st_allowed = True
-                for user_id in teamer:
-                    cursor.execute('UPDATE fight SET coin = coin + ? WHERE ID = ?', (len(teamer)/2*100,user_id))
-                    commit()
-        else:
-            await x.send("전에 있던 팀이 없습니다.")
-    else:
-        await x.author.send("없는 명령어입니다.")
         
 @client.command(aliases=["코인","ci"],name="coin")#코인을 출력해주는 명령어
 async def coinasdf(ctx):

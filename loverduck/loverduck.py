@@ -36,7 +36,7 @@ async def helpasdf(x, *, message=None):
         command = client.get_command('help')
         aliases = command.aliases
         await x.author.send("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n4.list\n5.replace\n6.displace\n7.coin\n8.profile\n9.gamble(만드는 중...)\n10.auction(만드는 중...)```")
-        await x.author.send(f"```ansi\n명령어들은 각각 영어 발음, 영어 약어, 한글로 사용할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m${aliases[0]} / ${aliases[1]} / ${aliases[2]} / ${aliases[3]} +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help end / $mn st```")
+        await x.author.send(f"```ansi\n명령어들은 각각 영어 발음, 영어 약어, 한글로 사용할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m${aliases[0]} / ${aliases[1]} / ${aliases[2]} / ${aliases[3]} +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help rd / $mn tire```")
     elif(message == "in" or message == "인" or message == "참가"):
         await x.author.send("```ansi\n이 명령어는 게임에 참가하는 명령어입니다.\n같은 명령어 = [4;1m인[0m [4;1m참가[0m [4;1min[0m```")
     elif(message == "out" or message == "아웃" or message == "퇴장"):
@@ -55,8 +55,6 @@ async def helpasdf(x, *, message=None):
         await x.author.send("```ansi\n이 명령어는 코인을 사용해 러시안 룰렛을 하는 여러가지 추가 명령이 있는 명령업니다.\n아이디어:[4;1m최주찬[0m\n추가 명령어를 보고싶다면 [4;1m$gb[0m를 치시면 됩니다.\n주의:도박중독은 [4;1m1336[0m\n같은 명령어 = [4;1m겜블[0m [4;1m도박[0m [4;1mgamble[0m [4;1mgb[0m```")
     elif(message == "auction" or message == "경매" or message == "옥션" or message == "at"):
         await x.author.send("```ansi\n이 명령어는 경매를 통해 자신이 원하는 사람을 자신의 내전 팀으로 옮기는 여러가지 명령어를 가진 명령어입니다.\n이 명령어에 자세하게 알고싶다면 [4;1m$auction[0m을 사용해 확인하세요.\n같은 명령어 = [4;1m옥션[0m [4;1m경매[0m [4;1mauction[0m [4;1mat[0m```")
-    elif(message == "start" or  message == "st" or message == "스타트" or message =="시작"):
-        await x.author.send("```ansi\n이 명령어는 간단하게 팀에 있는 사람수에 비례해 참가한 사람에게 coin을 지급하는 명령어입니다.\n같은 명령어 = [4;1m스타트[0m [4;1m시작[0m [4;1mstart[0m [4;1mst[0m```")
     elif(message == "프로필" or message == "prf" or message == "profile"):
         await x.author.send("```ansi\n이 명령어는 사용자의 프로필을 확인 및 수정하는 명령어입니다.\n같은 명령어 = [4;1m프로필[0m [4;1mprofile[0m [4;1mprf[0m```")
     else:
