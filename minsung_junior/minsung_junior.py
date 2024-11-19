@@ -226,7 +226,11 @@ async def rdasdf(interaction: discord.Interaction):
                     if target_channel:
                         await member.move_to(target_channel)
 
-        
+@client.tree.error
+async def on_error(interaction: discord.Interaction, error: Exception):
+    if isinstance(error, app_commands.errors.CommandOnCooldown):
+        await interaction.response.send_message(f"쿨타임입니다. 잠시 후 다시 시도해주세요.", ephemeral=True)
+
 @client.tree.command(description="코인 ci",name="coin")#코인을 출력해주는 명령어
 async def coinasdf(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
@@ -235,64 +239,98 @@ async def coinasdf(interaction: discord.Interaction):
     result = cursor.fetchone()
     
     if result is None:
-        await ctx.author.send("게임에 참가한 적이 없습니다.")
+        await interaction.response.send_message("게임에 참가한 적이 없습니다.",ephemeral=True)
     else:
         your_coin = result[0]
-        await ctx.author.send(f"{user}님의 코인: {your_coin}coin") 
+        await interaction.response.send_message(f"{user}님의 코인: {your_coin}coin",ephemeral=True) 
         
-@client.command(aliases=["프로필", "prf"], name="profile")
-async def prfasdf(ctx,*,message = None):
-    user_id = str(ctx.author.id)
+class ProfileButton(View):
+    line = ""
+
+    async def disable_all_items(self):
+        for item in self.children:
+            item.disabled = True
+        if self.message:
+            await self.message.edit(view=self)
+
+    async def process_interaction(self, interaction: discord.Interaction, value: str):
+        user = interaction.user
+        users = user.display_name
+        self.line = value 
+        await self.disable_all_items()  
+        self.stop() 
+
+    @discord.ui.button(label="TOP", style=discord.ButtonStyle.primary)
+    async def button_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, "TOP")
+
+    @discord.ui.button(label="JG", style=discord.ButtonStyle.primary)
+    async def button_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, "JG")
+    
+    @discord.ui.button(label="MID", style=discord.ButtonStyle.primary)
+    async def button_3(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, "MID")
+
+    @discord.ui.button(label="AD", style=discord.ButtonStyle.primary)
+    async def button_4(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, "AD")
+    
+    @discord.ui.button(label="SUP", style=discord.ButtonStyle.primary)
+    async def button_5(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, "SUP")
+
+class ProfileModal(Modal):
+    def __init__(self):
+        super().__init__(title="자기소개")
+        self.content_input = TextInput(label="내용", placeholder="자신을 소개하세요", required=False)
+        self.add_item(self.content_input)
+        
+    async def on_submit(self, interaction: discord.Interaction):
+        user_profile = self.content_input.value
+        await interaction.response.send_message(f"확인되었습니다.", ephemeral=True)
+
+@client.tree.command(description="프로필 prf", name="profile")
+async def prfasdf(interaction: discord.Interaction, value : str = ""):
+    user_id = str(interaction.user.id)
     fightfind(user=user_id)
     user_profile = cursor.fetchall()
-    commit()
-    if message is None:
-        await ctx.author.send("```ansi\n이 명령어는 나의 프로필을 확인 및 수정하는 명령어입니다.\nprofile의 명령어 : [1;4mcheck[0m or [1;4mposition[0m or [1;4msubposition[0m or [1;4mintro[0m가 있습니다.\n[1;4mcheck[0m : 자신의 프로필을 확일할 때 사용할 수 있습니다.\n[1;4mposition[0m : 자신의 주라인을 바꿀 때 사용할 수 있습니다.\n[1;4msubposition[0m : 자신이 부라인을 바꿀 때 사용할 수 있습니다.\n[1;4mintro[0m : 자신을 소개할 때 사용할 수 있습니다.```")
-    elif (message == "check" or message == "chk" or message == "확인" or message == "체크"):
-        await ctx.author.send(f"이름 : {user_profile[0][0]}\n티어 : {user_profile[0][1]}\n주라인 : {user_profile[0][4]}\n부라인 : {user_profile[0][5]}\n자기소개 : {user_profile[0][6]}")
-    elif (message == "position" or message == "pst" or message == "포지션" or message == "주라인"):
-        await ctx.author.send("주로 가는 라인을 바꿉니다. 주로가는 / 희망하는 라인을 입력해 주세요.")
-        while True:
-            user_message = await client.wait_for('message', check=lambda m: m.author == ctx.author)
-            if (user_message.content[0] == "$"):
-                await ctx.author.send("명령어는 불가능합니다.")
-                continue
-            else:
-                cursor.execute(f'UPDATE fight SET position = ? WHERE ID = ?',(user_message.content, user_id,))
-                commit()
-                await ctx.author.send("확인되었습니다.")
-                break
-    elif (message == "subposition" or message == "sub" or message == "서브포지션" or message == "부라인"):
-        await ctx.author.send("보조로 가는 라인을 바꿉니다. 보조로가는 / 희망하는 라인을 입력해 주세요.")
-        while True:
-            user_message = await client.wait_for('message', check=lambda m: m.author == ctx.author)
-            if (user_message.content[0] == "$"):
-                await ctx.author.send("명령어는 불가능합니다.")
-                continue
-            else:
-                cursor.execute(f'UPDATE fight SET subposition = ? WHERE ID = ?',(user_message.content, user_id,))
-                commit()
-                await ctx.author.send("확인되었습니다.")
-                break
-    elif (message == "intro" or message == "itr" or message == "인트로" or message == "자기소개"):
-        await ctx.author.send("자신을 마음껏 표현해주세요.")
-        while True:
-            user_message = await client.wait_for('message', check=lambda m: m.author == ctx.author)
-            if (user_message.content[0] == "$"):
-                await ctx.author.send("명령어는 불가능합니다.")
-                continue
-            else:
-                cursor.execute(f'UPDATE fight SET intro = ? WHERE ID = ?',(user_message.content, user_id,))
-                commit()
-                await ctx.author.send("확인되었습니다.")
-                break
+    if value == "":
+        await interaction.response.send_message("```ansi\n이 명령어는 나의 프로필을 확인 및 수정하는 명령어입니다.\nprofile의 명령어 : [1;4mcheck[0m or [1;4mposition[0m or [1;4msubposition[0m or [1;4mintro[0m가 있습니다.\n[1;4mcheck[0m : 자신의 프로필을 확일할 때 사용할 수 있습니다.\n[1;4mposition[0m : 자신의 주라인을 바꿀 때 사용할 수 있습니다.\n[1;4msubposition[0m : 자신이 부라인을 바꿀 때 사용할 수 있습니다.\n[1;4mintro[0m : 자신을 소개할 때 사용할 수 있습니다.```",ephemeral=True)
+    elif (value == "check" or value == "chk" or value == "확인" or value == "체크"):
+        await interaction.response.send_message(f"이름 : {user_profile[0][0]}\n티어 : {user_profile[0][1]}\n주라인 : {user_profile[0][4]}\n부라인 : {user_profile[0][5]}\n자기소개 : {user_profile[0][6]}",ephemeral=True)
+    elif (value == "position" or value == "pst" or value == "포지션" or value == "주라인"):
+        view = ProfileButton()
+        message = await interaction.response.send_message("주로 가는 라인을 바꿉니다. 주로가는 / 희망하는 라인을 선택해 주세요.",view=view, ephemeral=True)
+        view.message = message
+        await view.wait()
+        line = view.line
+        cursor.execute(f'UPDATE fight SET position = ? WHERE ID = ?',(line, user_id,))
+        commit()
+        await interaction.followup.send("확인되었습니다.",ephemeral=True)
+    elif (value == "subposition" or value == "sub" or value == "서브포지션" or value == "부라인"):
+        view = ProfileButton()
+        message = await interaction.response.send_message("보조로 가는 라인을 바꿉니다. 보조로가는 / 희망하는 라인을 선택해 주세요.",view = view,ephemeral=True)
+        view.message = message
+        await view.wait()
+        line = view.line
+        cursor.execute(f'UPDATE fight SET subposition = ? WHERE ID = ?',(line, user_id,))
+        commit()
+        await interaction.followup.send("확인되었습니다.",ephemeral=True)
+    elif (value == "intro" or value == "itr" or value == "인트로" or value == "자기소개"):
+        modal = ProfileModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+        content = modal.content_input.value
+        cursor.execute(f'UPDATE fight SET intro = ? WHERE ID = ?',(content, user_id,))
+        commit()
     else:
-        await ctx.author.send("잘못된 명령어입니다.")
+        await interaction.response.send_message("잘못된 명령어입니다.",ephemeral=True)
 
-@client.command(aliases=["티어", "tr"], name="tire")
-@commands.cooldown(1, 3, commands.BucketType.default)
-async def tire(ctx):
-    await ctx.author.send("현재 러버덕의 모든 사람들의 티어를 알려드리겠습니다.")
+@client.tree.command(description="티어 tr", name="tire")
+@app_commands.checks.cooldown(1, 3.0, key=lambda i: (i.guild_id))
+async def tire(interaction: discord.Interaction):
+    await interaction.response.send_message("현재 러버덕의 모든 사람들의 티어를 알려드리겠습니다.",ephemeral=True)
 
     tire_groups = {}
 
@@ -335,7 +373,7 @@ async def tire(ctx):
             tire_group_info.append("존재하지 않습니다.```")
             tire_groups[i] = tire_group_info
     for i in range(1, 6):
-        await ctx.author.send("\n".join(tire_groups[i]))
+        await interaction.followup.send("\n".join(tire_groups[i]),ephemeral=True)
             
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 @client.command(aliases=["도박","겜블","gb"],name="gamble")
@@ -470,10 +508,13 @@ async def gb(ctx, *, message=None):
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
 class AuctionView(View):
-    money = 0
+    money = 5
+    name = ""
 
+    def __init__(self,timeout: float = 10):
+        super().__init__(timeout=timeout)
+    
     async def on_timeout(self) -> None:
-        await self.message.channel.send("경매 종료!")
         await self.disable_all_items()
 
     async def disable_all_items(self):
@@ -482,9 +523,15 @@ class AuctionView(View):
         if self.message:
             await self.message.edit(view=self)
 
+    def reset_timeout(self):
+        self.timeout = 10
+
     async def process_interaction(self, interaction: discord.Interaction, value: int):
         self.money += value
-        await interaction.response.send_message(f"입찰 금액 : {self.money}!", ephemeral=True)
+        user = interaction.user
+        users = user.display_name
+        self.name = users
+        await interaction.response.send_message(f"입찰 금액 : {self.money} - {users}")
 
     @discord.ui.button(label="+5", style=discord.ButtonStyle.primary)
     async def button_5(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -519,113 +566,29 @@ class NameInputModal(Modal):
             int_value = int(self.money_input.value)
             if int_value < 0:
                 raise ValueError("금액은 0 이상이어야 합니다.")
+            user = interaction.user
+            users = user.display_name
+            self.name = users
             self.auction_view.money += int_value
-            await interaction.response.send_message(f"입찰 금액 : {self.auction_view.money}!", ephemeral=True)
+            self.auction_view.reset_timeout()
+            self.auction_view.name = users
+            await interaction.response.send_message(f"입찰 금액 : {self.auction_view.money} - {users}")
 
         except ValueError:
             if not interaction.response.is_done():
                 await interaction.response.send_message(f"숫자만 가능합니다.", ephemeral=True)
 
-@client.command(name="test")
-async def test(ctx):
-    view = AuctionView(timeout=15)
-    message = await ctx.send(view=view)
+@client.tree.command(name="auction",description="옥션 경매 auc" )
+async def test(interaction: discord.Interaction, name : str = ""):
+    view = AuctionView()
+    await interaction.response.send_message("경매가 시작되었습니다!")
+    message = await interaction.channel.send(view=view)
     view.message = message
-
-@client.command(aliases=["at","경매","옥션"],name="auction")
-async def atasdf(x,*,message = None):
-    users = x.author.display_name
-    team(team="team")
-    atlist = cursor.fetchall()
-    
-    if message is None:
-        await x.author.send("```이 명령어는 플래이어들을 선발하는 명령어입니다.```")
-    elif(message == "리더" or message == "leader" or message == "ldr" or message == "지도자"):
-            if len(atlist) / 2 > 1 and len(atlist) % 2 == 0:
-                team(team="team_one")
-                tolist = cursor.fetchone()
-                team(team="team_two")
-                twlist = cursor.fetchone()
-                if(tolist is None):
-                    await x.send(f"{users}님이 1팀의 리더입니다.")
-                    cursor.execute('INSERT INTO team_one (name, tire, point) SELECT name, COALESCE(tire, 0), COALESCE(point, 0) FROM team WHERE name = ?', (users,))
-                    commit()
-                elif(twlist is None):
-                    teamfind(team="team_one",user=users)
-                    toli = cursor.fetchone()
-                    if(toli):
-                        await x.send("당신은 이미 1팀의 리더입니다.")
-                    else:
-                        await x.send(f"{users}님이 2팀의 리더입니다.")
-                        cursor.execute('INSERT INTO team_two (name, tire, point) SELECT name, COALESCE(tire, 0), COALESCE(point, 0) FROM team WHERE name = ?', (users,))
-                        commit()
-                else:
-                    await x.send("이미 모든 팀의 리더가 있습니다.")
-            else:
-                await x.send("내전에 참가한 사람이 부족하거나 홀수입니다.")
-                
-    elif(message == "start" or message == "시작" or message == "st" or message == "시작"):
-        cursor.execute("DELETE FROM auction")
-        commit()
-        if len(atlist) / 2 > 1 and len(atlist) % 2 == 0:
-            team(team="team")
-            tlist = cursor.fetchall()
-            team(team="team_one")
-            tolist = cursor.fetchone()
-            team(team="team_two")
-            twlist = cursor.fetchone()
-            if(tolist is None or twlist is None):
-                await x.send("팀에 리더가 부족합니다.")
-            else:
-                for team_info in tlist:
-                    cursor.execute("INSERT INTO auction (name, tire, point, position, subposition, intro, ID) VALUES (?, ?, ?, ?, ?, ?, ?)", team_info)
-                    commit()
-                cursor.execute("DELETE FROM auction WHERE name = ?",(tolist[0],))
-                cursor.execute("DELETE FROM auction WHERE name = ?",(twlist[0],))
-                commit()
-                cursor.execute("SELECT * FROM auction")
-                atls = cursor.fetchall()
-                await x.send("경매를 시작합니다.")
-                
-                for atmem in atls:
-                    cursor.execute("SELECT coin FROM fight WHERE name = ?", (tolist[0],))
-                    ldr1coin = cursor.fetchone()
-                    cursor.execute("SLEECT coin FROM fight WHERE name = ?", (twlist[0],))
-                    ldr2coin = cursor.fetchone()
-                    await x.send(f"이름 : {atmem[0]}\n티어 : {atmem[1]}\n주라인 : {atmem[3]}\n부라인 : {atmem[4]}\n자기소개 : {atmem[5]}")
-                    bttl1 = 0
-                    bttl2 = 0
-                    while True:
-                        def check(message):
-                            return message.author == tolist[0] or message.author == twlist[0]
-                        try:
-                            bet_message = await client.wait_for("message", check=check, timeout=10)
-                            bet_amount = bet_message.content
-
-                            if not bet_amount.isdigit():
-                                await x.send("숫자여야 합니다.")
-                            else:
-                                if(message.author == tolist[0]):
-                                    bttl1 = bttl1 + bet_amount
-                                    if(bet_amount <= ldr1coin or ldr1coin - bttl1 > 0):
-                                        await x.send(f"```ansi\nn[1;31m{atmem[0]} : {bet_amount}n[0m```")
-                                        await x.author.send(f"사용 가능한 코인 : {ldr1coin-bttl1}")
-                                    else:
-                                        await x.send("돈이 부족합니다.")
-                                if(message.author == twlist[0]):
-                                    bttl2 = bttl2 + bet_amount
-                                    if(bet_amount <= ldr2coin or ldr2coin - bttl2 > 0):
-                                        await x.send(f"```ansi\nn[1;34m{atmem[0]} : {bet_amount}n[0m```")
-                                        await x.author.send(f"사용 가능한 코인 : {ldr2coin-bttl2}")
-                                    else:
-                                        await x.send("돈이 부족합니다.")
-                        except asyncio.TimeoutError:
-                            cursor.execute("UPDATE fight SET coin")
-                            commit() 
-        else:
-            await x.send("내전에 참가한 사림이 부족하거나 홀수입니다.")
-    else:
-        await x.author.send("잘못된 명령어입니다.")
+    await view.wait()
+    if(view.name == ""):
+        await interaction.followup.send("유찰되었습니다.")
+    else :
+        await interaction.followup.send(f"경매 종료! 의 가격은 {view.money}")
 
 @client.event#에러가 뜨면 출력해주는 명령어
 async def on_command_error(ctx, error):
