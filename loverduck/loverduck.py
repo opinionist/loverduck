@@ -62,7 +62,6 @@ async def helpasdf(x, *, message=None):
 
 @client.command(aliases=["인", "참가"], name="in")  # 게임에 참가하는 명령어
 async def inasdf(ctx):
-    global en_allowed
     users = ctx.author.display_name
     user_id = str(ctx.author.id)
 
@@ -82,7 +81,6 @@ async def inasdf(ctx):
         cursor.execute('INSERT INTO team (name, tire, point, position, subposition, intro, ID) SELECT name, COALESCE(tire, 0), COALESCE(point, 0),COALESCE(position, "미정"),COALESCE(subposition, "미정"),COALESCE(intro, "미정") , COALESCE(ID, 0) FROM fight WHERE ID = ?', (user_id,))
         commit()
         await ctx.send(f'**{users}**님이 게임에 참가했습니다.')
-        en_allowed = False
 
 @client.command(aliases=["아웃", "퇴장"], name="out")#게임에 퇴장하는 명령어
 async def outasdf(ctx):
@@ -101,7 +99,6 @@ async def outasdf(ctx):
 
 @client.command(aliases=["포함", "rep", "리플레이스"],name='replace')#플레이어를 포함시키는 명령어
 async def rplasdf(ctx, *, message=None):  
-    global en_allowed
     if message is None:
         await ctx.author.send("```이 명령어는 남을 대신 추가시키는 명령어입니다. ex) $replace @귀차니즘 러덕```")
     elif message[1] != "@":
@@ -127,7 +124,6 @@ async def rplasdf(ctx, *, message=None):
             cursor.execute('INSERT INTO team (name, tire, point, position, subposition, intro, ID) SELECT name, tire, point, position, subposition, intro, ID FROM fight WHERE ID = ?', (user_id,))
             commit()
             await ctx.send(f"**{user_nickname}**님을 게임에 추가합니다.")
-            en_allowed = False
 
 @client.command(aliases=["dis", "제외", "디스플레이스"],name='displace')#플레이어를 제외시키는 명령어
 async def dipasdf(x, *, message=None):
@@ -165,15 +161,9 @@ async def lsasdf(x):
 @client.command(aliases=["rd", "랜덤", "섞기"], name='random')  # 플레이어를 섞는 명령어
 @commands.cooldown(1, 3, commands.BucketType.default)
 async def rdasdf(ctx):
-    global rd_allowed
-    global en_allowed
-    global lk_allowed
     
-    if rd_allowed:
         team(team="team")
         fighter = cursor.fetchall()
-        en_allowed = True
-        lk_allowed = False
         
         cursor.execute('DELETE FROM team_one')
         cursor.execute('DELETE FROM team_two')
@@ -244,8 +234,6 @@ async def rdasdf(ctx):
                         target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방2")
                         if target_channel:
                             await member.move_to(target_channel)
-    else:
-        await ctx.send("end명령어를 사용해 주세요.")
         
 @client.command(aliases=["코인","ci"],name="coin")#코인을 출력해주는 명령어
 async def coinasdf(ctx):
