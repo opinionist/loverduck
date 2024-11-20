@@ -375,5 +375,26 @@ async def tire(interaction: discord.Interaction):
     for i in range(1, 6):
         await interaction.followup.send("\n".join(tire_groups[i]),ephemeral=True)
 
+@client.event
+async def on_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if interaction.response.is_done():
+        await interaction.followup.send("에러 발생", ephemeral=True)
+    else:
+        await interaction.response.send_message("에러 발생", ephemeral=True)
+    print(f"Error occurred: {error}")
+        
+blacklist = [1143788153828806686]
+
+@client.check
+async def global_blacklist_check(interaction: discord.Interaction) -> bool:
+    if interaction.user.id in blacklist:
+        user_display_name = interaction.user.display_name
+        await interaction.response.send_message(
+            f"{user_display_name}님은 명령어를 사용할 권한이 없습니다.", ephemeral=True)
+        return False
+    return True
+        
+
+
 loverduck = os.getenv('LOVERDUCK')
 client.run(loverduck)

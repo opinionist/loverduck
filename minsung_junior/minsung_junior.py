@@ -515,6 +515,7 @@ class AuctionView(View):
         super().__init__(timeout=timeout)
     
     async def on_timeout(self) -> None:
+        print("timeout")
         await self.disable_all_items()
 
     async def disable_all_items(self):
@@ -578,30 +579,43 @@ class NameInputModal(Modal):
             if not interaction.response.is_done():
                 await interaction.response.send_message(f"숫자만 가능합니다.", ephemeral=True)
 
+button = True
 @client.tree.command(name="auction",description="옥션 경매 auc" )
 async def test(interaction: discord.Interaction, name : str = ""):
+    global button
+    if not (button):
+        await interaction.response.send_message("실행하실 수 없습니다.",ephemeral=True)
+        return
+
+    button = False
     view = AuctionView()
     await interaction.response.send_message("경매가 시작되었습니다!")
     message = await interaction.channel.send(view=view)
     view.message = message
     await view.wait()
+    
+
     if(view.name == ""):
         await interaction.followup.send("유찰되었습니다.")
+        button = True
     else :
         await interaction.followup.send(f"경매 종료! 의 가격은 {view.money}")
+        button = True
 
-@client.event#에러가 뜨면 출력해주는 명령어
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound, ):
-        await ctx.send("잘못된 명령입니다.")
-        
-@client.event#블랙리스트
-async def on_message(message):
-    blacklist = [640894329942719850]
-    if message.author.id in blacklist:
-        return  # 블랙리스트에 있는 사용자는 봇 명령을 무시
-    await client.process_commands(message)
-        
+@client.tree.command(name="embed_with_button")
+async def embed_with_button(interaction: discord.Interaction):
+    view = AuctionView()
+    embed = discord.Embed(
+        title="Example Embed",
+        description="This is an embed with a button!",
+        color=discord.Color.blurple()
+    )
+    embed.add_field(name="Field 1", value="This is the first field.", inline=False)
+    embed.add_field(name="Field 2", value="This is the second field.", inline=True)
+    embed.set_footer(text="This is the footer.")
+    await interaction.response.send_message("test")
+    message = await interaction.channel.send(embed=embed,view=view)
+    view.message = message
 
 
 minsung_junior = os.getenv('MINSUNGJUNIOR')
