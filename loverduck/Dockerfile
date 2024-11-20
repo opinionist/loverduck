@@ -6,6 +6,6 @@ COPY request.txt .
 RUN pip install --no-cache-dir -r request.txt
 
 COPY loverduck.py .
-COPY DateBase.db .
+COPY DataBase.db .
 
 CMD ["python", "loverduck.py"]

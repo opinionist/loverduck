@@ -374,3 +374,6 @@ async def tire(interaction: discord.Interaction):
             tire_groups[i] = tire_group_info
     for i in range(1, 6):
         await interaction.followup.send("\n".join(tire_groups[i]),ephemeral=True)
+
+loverduck = os.getenv('LOVERDUCK')
+client.run(loverduck)
