@@ -16,6 +16,8 @@ intents.message_content = True
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="$", intents=intents, help_command = None)
+        self.command_in_use = False
+
 
     async def setup_hook(self):
         await self.tree.sync()
@@ -375,6 +377,226 @@ async def tire(interaction: discord.Interaction):
     for i in range(1, 6):
         await interaction.followup.send("\n".join(tire_groups[i]),ephemeral=True)
 
+
+class GambleModal(Modal):
+    your_money = 0
+    def __init__(self):
+        super().__init__(title="배팅")
+        self.money_input = TextInput(label="금액", placeholder="배팅할 금액을 알려주십시오.", required=False)
+        self.add_item(self.money_input)
+        
+    async def on_submit(self, interaction: discord.Interaction):
+        users = str(interaction.user.id)
+        user_name = interaction.user.display_name
+        user_money = self.money_input.value
+        try:
+            int_value = int(self.money_input.value)
+            if int_value < 1:
+                raise ValueError("금액은 1 이상이어야 합니다.")
+            if int_value > self.your_money:
+                raise ValueError("금액이 부족합니다.")
+            await interaction.response.send_message(f"{user_name}님이 {user_money}만큼 배팅힙니다.")
+
+        except ValueError as e:
+            if (str(e) == "금액은 1 이상이어야 합니다." or str(e) == "금액이 부족합니다."):
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"{str(e)}", ephemeral=True)
+            else:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"숫자만 가능합니다.", ephemeral=True)
+
+class ShootView(View):
+    number = 0
+    limit = 0
+    async def disable_all_items(self):
+        for item in self.children:
+            item.disabled = True
+        if self.message:
+            await self.message.edit(view=self)
+
+    @discord.ui.button(label="선택", style=discord.ButtonStyle.red)
+    async def enter_name_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if (interaction.user.id == self.owner):
+            modal = ShootModal(self)
+            await interaction.response.send_modal(modal)
+        else:
+            await interaction.response.send_message("당신은 선택받은 자가 아닙니다.",ephemeral=True)
+
+class ShootModal(Modal):
+    def __init__(self, shootview: ShootView):
+        super().__init__(title="선택")
+        self.shootview = shootview
+        self.choice_input = TextInput(label="선택", placeholder="선택할 플레이어의 번호를 입력하세요.", required=True)
+        self.add_item(self.choice_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            int_value = int(self.choice_input.value)
+            if (int_value < 1 or int_value > self.shootview.limit):
+                raise ValueError("플레이어의 번호는 범위 안에 있어야 합니다.")
+            user = interaction.user
+            users = user.display_name
+            self.shootview.number = int_value
+            await interaction.response.send_message(f"{int_value}번 플레이어를 {users}님이 쏘기 시작합니다...")
+            await self.shootview.disable_all_items()
+            self.shootview.stop()
+
+        except ValueError as e:
+            if str(e) == "플레이어의 번호는 범위 안에 있어야 합니다.":
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"{str(e)}", ephemeral=True)
+            else:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"숫자만 가능합니다.", ephemeral=True)
+
+@client.tree.command(description = "도박 겜블 gb",name="gamble")
+async def gb(interaction: discord.Interaction, value : str = ""):
+    user = interaction.user
+    users = str(interaction.user.id)
+    user_name = user.display_name
+    cursor.execute("SELECT coin FROM fight WHERE ID = ?", (users,))
+    money =  cursor.fetchone()[0]
+    
+    if money is None:
+        await interaction.response.send_message("아에 참가한 적이 없습니다 $in을 치세요.",ephemeral=True)
+    elif money == 0:
+        await interaction.response.send_message("돈이 없습니다.",ephemeral=True)
+    else:
+        if value == "":
+            await interaction.response.send_message("```java\n명령어의 종류 \n1.in : 게임에 참가하는 명령업니다.\n같은 명령어 : in / 인 / 참가\n2.out : 게임에 퇴장하는 명령업니다.\n같은 명령어 : out / 아웃 / 퇴장\n3.money : 게임에 걸린 돈들을 보는 명령어입니다.\n같은 명령어 :  money / mn / 머니 / 판돈\n4.bet : 게임에 돈을 거는 명령업니다.\n같은 명령어 : bet / 배팅 / 걸기\n5.list : 지금 도박에 참여한 사람들을 확인하는 명령업니다.\n같은 명령어 : list / ls / 리스트 / 인원\n6.start : 러시안 룰렛을 시작하는 명령업니다.\n같은 명령어 : start / st / 스타트 / 시작```",ephemeral=True)
+
+        elif (value == "in" or value == "참가" or value == "인"): #참가하는 명령어
+            cursor.execute('SELECT * FROM gamble WHERE ID = ?', (users,))
+            player = cursor.fetchone()
+            if player:
+                await interaction.response.send_message("이미 참가되어 있습니다.",ephemeral=True)
+            else:
+                cursor.execute('INSERT INTO gamble (name,coin,ID) values(?,?,?)', (user_name,money,users,))
+                commit()
+                cursor.execute("SELECT COUNT(*) FROM gamble")
+                num = cursor.fetchone()
+                cursor.execute('UPDATE gamble SET num = ? WHERE ID = ?',(num[0],users,))
+                commit()
+                await interaction.response.send_message(f"러시안 룰렛에 **{user_name}**님이 참가합니다.")
+                
+        elif (value == "out" or value == "아웃" or value == "퇴장"):#게임에서 나가는 명령어
+            cursor.execute('SELECT * FROM gamble WHERE ID = ?', (users,))
+            out_fighter = cursor.fetchone()
+    
+            if out_fighter:
+                cursor.execute('DELETE FROM gamble WHERE ID = ?', (users,))
+                commit()
+                await interaction.response.send_message(f'**{user_name}**님이 게임에서 이탈합니다.')
+            else:
+                await interaction.response.send_message(f'참여하지 않는 사람은 나가실 수 없습니다.',ephemeral=True) 
+                
+        elif (value == "money" or value == "mn" or value == "판돈" or value == "머니"):#게임의 판돈을 보는 명령어
+            cursor.execute('SELECT SUM(money) FROM gamble')
+            game_money = cursor.fetchone()
+            
+            if game_money[0] == 0:
+                await interaction.response.send_message("걸린 돈이 없습니다.",ephemeral=True)
+            else:
+                await interaction.response.send_message(f"이 한 게임의 판돈 : {game_money[0]}",ephemeral=True)
+                
+        elif (value == "bet" or value == "걸기" or value == "배팅"):#게임에 돈을 거는 명령어
+            cursor.execute('SELECT coin FROM gamble WHERE ID = ?', (users,))
+            your_money = cursor.fetchone()[0]
+            modal = GambleModal()
+            await interaction.response.send_modal(modal)
+            modal.your_money = your_money
+            await modal.wait()
+            bet_money = modal.money_input.value
+
+            cursor.execute('UPDATE gamble SET money = money + ? WHERE ID = ?', (bet_money, users,))
+            cursor.execute('UPDATE gamble SET coin = coin - ? WHERE ID = ?', (bet_money, users,))
+            cursor.execute('UPDATE gamble SET dividend = (SELECT SUM(money) FROM gamble)')
+            cursor.execute("UPDATE fight SET coin = coin - ? WHERE ID = ?",(bet_money,users,))
+            commit()
+
+            cursor.execute('SELECT coin FROM gamble WHERE ID = ?', (users,))
+            change = cursor.fetchone()[0]
+            await interaction.followup.send(f"{user_name}님의 남은 돈 : {change}",ephemeral=True)
+
+        elif (value == "list" or value == "ls" or value == "리스트" or value == "인원"):#게임에 참가한 사람들 보여주기
+            cursor.execute('SELECT ID , num FROM gamble')
+            mamber = cursor.fetchall()
+            
+            gamble_mm = '\n'.join([f'***{data[1]}***. <@{data[0]}>' for data in mamber])
+            await interaction.response.send_message(f"***게임에 참가한 사람들*** \n{gamble_mm}")
+        
+        elif (value == "start" or value == "st" or value == "시작" or value == "스타트"):  # 도박 시작
+            cursor.execute('SELECT * FROM gamble')
+            members = cursor.fetchall()
+            num = len(members)
+            if client.command_in_use :
+                await interaction.response.send_message("이미 러시안 룰렛이 시작되었습니다. 끝날 때까지 기다려주세요.", ephemeral=True)
+                return
+
+
+            if num is None:
+                await interaction.response.send_message("참가한 사람이 없습니다.",ephemeral=True)
+            elif num > 1:
+                client.command_in_use = True
+                await interaction.response.send_message(f"참가한 인원 {num}명\n게임을 시작하겠습니다.")
+                
+                while (num != 1):
+                    unluck = random.randrange(1, 6)
+                    circle = True
+                    cursor.execute('SELECT ID, num FROM gamble')
+                    member = cursor.fetchall()
+                    gamble_mm = '\n'.join([f'***{data[1]}***. <@{data[0]}>' for data in member])
+                    await interaction.followup.send(f"***게임에 참여한 사람들*** \n{gamble_mm}")
+
+                    own = random.choice(member)
+                    await interaction.followup.send(f"<@{own[0]}>님이 총을 쥐었습니다.")
+                    check = own[0]
+                    while(circle):
+                        view = ShootView()
+                        message = await interaction.channel.send(view=view)
+
+                        view.message = message
+                        view.owner = check
+                        view.limit = num
+
+                        await view.wait()
+
+                        number = view.number
+                        cursor.execute("SELECT * FROM gamble WHERE num = ?", (number,))
+                        check = cursor.fetchone()[3]
+
+                        if check is None:
+                            await interaction.followup.send("그 플레이어는 쏠 수 없습니다.")
+                        else:
+                            unluck = unluck - 1
+                            if unluck <= 1:
+                                circle = False
+                                num = num - 1
+                                await interaction.followup.send(f"<@{check}>님은 선택받은 사람이 아니였습니다.")
+                                cursor.execute("SELECT ID,money FROM gamble WHERE num = ?",(number,))
+                                loser = cursor.fetchone()
+                                cursor.execute("UPDATE fight SET coin = coin - ? WHERE ID = ?",(loser[1],loser[0],))
+                                cursor.execute("DELETE FROM gamble WHERE num = ?",(number,))
+                                commit()
+                            else:
+                                await interaction.followup.send(f"총의 주인은 이제 <@{check}>님 입니다.")
+                                cursor.execute('SELECT ID, num FROM gamble')
+                                member = cursor.fetchall()
+                                gamble_mm = '\n'.join([f'***{data[1]}***. <@{data[0]}>' for data in member])
+                                await interaction.followup.send(f"***게임에 참여한 사람들*** \n{gamble_mm}")
+
+                cursor.execute("SELECT ID,dividend FROM gamble")
+                last = cursor.fetchone()
+                await interaction.followup.send(f"<@{last[0]}>님이 최후의 생존자 입니다.")
+                cursor.execute("UPDATE fight SET coin = coin + ? WHERE ID = ?",(last[1],last[0],))
+                cursor.execute("DELETE FROM gamble")
+                commit()
+                client.command_in_use = False
+            else:
+                await interaction.response.send_message("혼자서는 게임을 못 합니다.",ephemeral=True)
+        else:
+            await interaction.response.send_message("잘못된 명령어",ephemeral=True)
+
 @client.event
 async def on_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if interaction.response.is_done():
@@ -394,7 +616,5 @@ async def global_blacklist_check(interaction: discord.Interaction) -> bool:
         return False
     return True
         
-
-
 loverduck = os.getenv('LOVERDUCK')
 client.run(loverduck)
