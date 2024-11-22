@@ -562,7 +562,6 @@ async def gb(interaction: discord.Interaction, value : str = ""):
                             if unluck <= 1:
                                 circle = False
                                 num = num - 1
-                                print(num)
                                 await interaction.followup.send(f"<@{check}>님은 선택받은 사람이 아니였습니다.")
                                 cursor.execute("SELECT ID,money FROM gamble WHERE num = ?",(number,))
                                 loser = cursor.fetchone()
