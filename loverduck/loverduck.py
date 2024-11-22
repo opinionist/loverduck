@@ -18,7 +18,6 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix="$", intents=intents, help_command = None)
         self.command_in_use = False
 
-
     async def setup_hook(self):
         await self.tree.sync()
         print("Slash commands have been synced!")
@@ -45,7 +44,7 @@ def fight():
 @client.tree.command(name="help",description="메뉴얼 도움말 help hl mn menu")#명령어에 대해서 설명해주는 명령어
 async def helpasdf(interaction: discord.Interaction, value: str = ""):
     if not value:
-        await interaction.response.send_message("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n6.list\n7.replace\n8.displace\n9.coin(만드는 중...)\n10.gamble(만드는 중...)\n11.auction(만드는 중...)\n12.profile(만드는 중...)```", ephemeral=True)
+        await interaction.response.send_message("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n6.list\n7.replace\n8.displace\n9.coin\n10.gamble\n11.auction(만드는 중...)\n12.profile```", ephemeral=True)
         await interaction.response.send_message("```ansi\n명령어들은 각각 한글, 영어(줄임말) 영어의미로 할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m$메뉴얼 / $도움말 / $help / $hl +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help rd / $mn tire```", ephemeral=True)
     elif(value == "in" or value == "인" or value == "참가"):
         await interaction.response.send_message("```ansi\n이 명령어는 게임에 참가하는 명령어입니다.\n같은 명령어 = [4;1m인[0m [4;1m참가[0m [4;1min[0m```",ephemeral=True)
@@ -248,18 +247,10 @@ async def coinasdf(interaction: discord.Interaction):
         
 class ProfileButton(View):
     line = ""
-
-    async def disable_all_items(self):
-        for item in self.children:
-            item.disabled = True
-        if self.message:
-            await self.message.edit(view=self)
-
     async def process_interaction(self, interaction: discord.Interaction, value: str):
         user = interaction.user
         users = user.display_name
         self.line = value 
-        await self.disable_all_items()  
         self.stop() 
 
     @discord.ui.button(label="TOP", style=discord.ButtonStyle.primary)
@@ -296,11 +287,11 @@ class ProfileModal(Modal):
 async def prfasdf(interaction: discord.Interaction, value : str = ""):
     user_id = str(interaction.user.id)
     fightfind(user=user_id)
-    user_profile = cursor.fetchall()
+    user_profile = cursor.fetchone()
     if value == "":
         await interaction.response.send_message("```ansi\n이 명령어는 나의 프로필을 확인 및 수정하는 명령어입니다.\nprofile의 명령어 : [1;4mcheck[0m or [1;4mposition[0m or [1;4msubposition[0m or [1;4mintro[0m가 있습니다.\n[1;4mcheck[0m : 자신의 프로필을 확일할 때 사용할 수 있습니다.\n[1;4mposition[0m : 자신의 주라인을 바꿀 때 사용할 수 있습니다.\n[1;4msubposition[0m : 자신이 부라인을 바꿀 때 사용할 수 있습니다.\n[1;4mintro[0m : 자신을 소개할 때 사용할 수 있습니다.```",ephemeral=True)
     elif (value == "check" or value == "chk" or value == "확인" or value == "체크"):
-        await interaction.response.send_message(f"이름 : {user_profile[0][0]}\n티어 : {user_profile[0][1]}\n주라인 : {user_profile[0][4]}\n부라인 : {user_profile[0][5]}\n자기소개 : {user_profile[0][6]}",ephemeral=True)
+        await interaction.response.send_message(f"이름 : {user_profile[0]}\n티어 : {user_profile[1]}\n주라인 : {user_profile[4]}\n부라인 : {user_profile[5]}\n자기소개 : {user_profile[6]}",ephemeral=True)
     elif (value == "position" or value == "pst" or value == "포지션" or value == "주라인"):
         view = ProfileButton()
         message = await interaction.response.send_message("주로 가는 라인을 바꿉니다. 주로가는 / 희망하는 라인을 선택해 주세요.",view=view, ephemeral=True)
@@ -376,8 +367,7 @@ async def tire(interaction: discord.Interaction):
             tire_groups[i] = tire_group_info
     for i in range(1, 6):
         await interaction.followup.send("\n".join(tire_groups[i]),ephemeral=True)
-
-
+            
 class GambleModal(Modal):
     your_money = 0
     def __init__(self):
@@ -597,24 +587,5 @@ async def gb(interaction: discord.Interaction, value : str = ""):
         else:
             await interaction.response.send_message("잘못된 명령어",ephemeral=True)
 
-@client.event
-async def on_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
-    if interaction.response.is_done():
-        await interaction.followup.send("에러 발생", ephemeral=True)
-    else:
-        await interaction.response.send_message("에러 발생", ephemeral=True)
-    print(f"Error occurred: {error}")
-        
-blacklist = [1143788153828806686]
-
-@client.check
-async def global_blacklist_check(interaction: discord.Interaction) -> bool:
-    if interaction.user.id in blacklist:
-        user_display_name = interaction.user.display_name
-        await interaction.response.send_message(
-            f"{user_display_name}님은 명령어를 사용할 권한이 없습니다.", ephemeral=True)
-        return False
-    return True
-        
-loverduck = os.getenv('LOVERDUCK')
-client.run(loverduck)
+minsung_junior = os.getenv('LOVERDUCK')
+client.run(minsung_junior)

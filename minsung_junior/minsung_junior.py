@@ -44,7 +44,7 @@ def fight():
 @client.tree.command(name="help",description="메뉴얼 도움말 help hl mn menu")#명령어에 대해서 설명해주는 명령어
 async def helpasdf(interaction: discord.Interaction, value: str = ""):
     if not value:
-        await interaction.response.send_message("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n6.list\n7.replace\n8.displace\n9.coin(만드는 중...)\n10.gamble(만드는 중...)\n11.auction(만드는 중...)\n12.profile(만드는 중...)```", ephemeral=True)
+        await interaction.response.send_message("명령어들을 알려드립니다.```java\n1.in\n2.out\n3.random\n6.list\n7.replace\n8.displace\n9.coin\n10.gamble\n11.auction(만드는 중...)\n12.profile```", ephemeral=True)
         await interaction.response.send_message("```ansi\n명령어들은 각각 한글, 영어(줄임말) 영어의미로 할 수 있습니다.\n명령어에 대하여 좀 더 자세하게 알고싶다면 [1m$메뉴얼 / $도움말 / $help / $hl +'명령어'[0m로 확인하세요\nex) $메뉴얼 인 / $도움말 퇴장 / $help rd / $mn tire```", ephemeral=True)
     elif(value == "in" or value == "인" or value == "참가"):
         await interaction.response.send_message("```ansi\n이 명령어는 게임에 참가하는 명령어입니다.\n같은 명령어 = [4;1m인[0m [4;1m참가[0m [4;1min[0m```",ephemeral=True)
