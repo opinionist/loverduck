@@ -283,6 +283,19 @@ class ProfileModal(Modal):
         user_profile = self.content_input.value
         await interaction.response.send_message(f"확인되었습니다.", ephemeral=True)
 
+class RiotModal(Modal):
+    def __init__(self):
+        super().__init__(title="Riot")
+        self.riot_input = TextInput(label="이름", placeholder="플레이어 이름을 적으세요.", required=True)
+        self.add_item(self.riot_input)
+        self.tag_input = TextInput(label="Tag", placeholder="KR1", max_length=5,required=True)
+        self.add_item(self.tag_input)
+        
+    async def on_submit(self, interaction: discord.Interaction):
+        player_name = self.riot_input.value
+        game_tag = self.tag_input.value
+        await interaction.response.send_message(f"확인되었습니다.", ephemeral=True)
+
 @client.tree.command(description="프로필 prf", name="profile")
 async def prfasdf(interaction: discord.Interaction, value : str = ""):
     user_id = str(interaction.user.id)
@@ -316,6 +329,15 @@ async def prfasdf(interaction: discord.Interaction, value : str = ""):
         await modal.wait()
         content = modal.content_input.value
         cursor.execute(f'UPDATE fight SET intro = ? WHERE ID = ?',(content, user_id,))
+        commit()
+    elif (value == "riot" or value == "라이엇" or value == "ri"):
+        modal = RiotModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+        player_name = modal.riot_input.value
+        tag = modal.tag_input.value
+        tag = tag.replace('#','')
+        cursor.execute(f"UPDATE fight SET riot = ?, tag = ? WHERE ID = ?",(player_name, tag,user_id,))
         commit()
     else:
         await interaction.response.send_message("잘못된 명령어입니다.",ephemeral=True)
@@ -664,38 +686,52 @@ class NameInputModal(Modal):
 
 button = True
 @client.tree.command(name="auction",description="옥션 경매 auc" )
-async def auction(interaction: discord.Interaction, name : str = ""):
+async def auction(interaction: discord.Interaction, value : str = ""):
+    user = interaction.user
+    user_id = str(interaction.user.id)
+    user_name = user.display_name
+    fightfind(user = user_id)
+    player = cursor.fetchone()[0]
     global button
-    if not (button):
-        await interaction.response.send_message("실행하실 수 없습니다.",ephemeral=True)
-        return
+    if(value == "in" or value == "참가" or value == "인"):
+        cursor.execute("SELECT * FROM auction WHERE ID = ?",(user_id,))
+        check = cursor.fetchone()[0]
+        if(check is not None):
+            await interaction.response.send_message(f"{user_name}님은 이미 경매에 참가했습니다.",ephemeral=True)
+        else:
+            await interaction.response.send_message(f"{user_name}님이 경매에 참가합니다.")
+            cursor.execute("INSERT INTO auction values(?,?,?,?,?,?)",(player[0],player[1],player[2],player[4],player[5],player[6],player[7],player[8],player[9]))
+    if(value == "start" or value == "st" or value == "시작" or value == "스타트"):
+        if not (button):
+            await interaction.response.send_message("실행하실 수 없습니다.",ephemeral=True)
+            return
 
-    button = False
-    view = AuctionView()
-    await interaction.response.send_message("경매가 시작되었습니다!")
-    message = await interaction.channel.send(view=view)
-    view.message = message
-    await view.wait()
-    
+        button = False
+        view = AuctionView()
+        await interaction.response.send_message("경매가 시작되었습니다!")
+        message = await interaction.channel.send(view=view)
+        view.message = message
+        await view.wait()
+        
 
-    if(view.name == ""):
-        await interaction.followup.send("유찰되었습니다.")
-        button = True
-    else :
-        await interaction.followup.send(f"경매 종료! 의 가격은 {view.money}")
-        button = True
+        if(view.name == ""):
+            await interaction.followup.send("유찰되었습니다.")
+            button = True
+        else :
+            await interaction.followup.send(f"경매 종료! 의 가격은 {view.money}")
+            button = True
 
 @client.tree.command(name="embed")
 async def embed_with_button(interaction: discord.Interaction):
     view = AuctionView()
     embed = discord.Embed(
-        title="임베드 테스트입니다.",
-        description="설명 테스트입니다.",
+        title=f"플레이어 이름",
+        description=f"티어",
         color=discord.Color.blurple()
     )
     embed.set_thumbnail(url="https://i.namu.wiki/i/zmaUOORwV8b4zdqU7YshHxBknjVqo2OpijLShyYW6f61rBNh_2KzJtjNZxqJ6phjdSX87S9jTR5e9Avg7pt3vQ.webp")
-    embed.add_field(name="첫번째", value="첫번째의 값입니다.", inline=False)
-    embed.add_field(name="두번째", value="두번째의 값입니다..", inline=True)
+    embed.add_field(name="Main Position", value="첫번째의 값입니다.", inline=False)
+    embed.add_field(name="Sub Position", value="두번째의 값입니다..", inline=True)
     embed.set_footer(text="푸터입니다..")
     await interaction.response.send_message("test")
     message = await interaction.channel.send(embed=embed,view=view)
