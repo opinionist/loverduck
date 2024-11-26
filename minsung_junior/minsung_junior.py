@@ -693,7 +693,17 @@ async def auction(interaction: discord.Interaction, value : str = ""):
     fightfind(user = user_id)
     player = cursor.fetchone()[0]
     global button
+
+    team(team = team)
+    team_count = len(cursor.fetchall())
+    team(team = auction)
+    auction_count = len(cursor.fetchall())
+
     if(value == "in" or value == "참가" or value == "인"):
+        if(auction_count >= 2):
+            await interaction.response.send_message("경매에 참여하실 수 없습니다.",ephemeral=True)
+            return
+        
         cursor.execute("SELECT * FROM auction WHERE ID = ?",(user_id,))
         check = cursor.fetchone()[0]
         if(check is not None):
@@ -701,38 +711,71 @@ async def auction(interaction: discord.Interaction, value : str = ""):
         else:
             await interaction.response.send_message(f"{user_name}님이 경매에 참가합니다.")
             cursor.execute("INSERT INTO auction values(?,?,?,?,?,?)",(player[0],player[1],player[2],player[4],player[5],player[6],player[7],player[8],player[9]))
+            cursor.execute("DELETE FROM team WHERE ID = ?"(user_id,))
+            commit()
+
     if(value == "start" or value == "st" or value == "시작" or value == "스타트"):
         if not (button):
             await interaction.response.send_message("실행하실 수 없습니다.",ephemeral=True)
             return
-
-        button = False
-        view = AuctionView()
-        await interaction.response.send_message("경매가 시작되었습니다!")
-        message = await interaction.channel.send(view=view)
-        view.message = message
-        await view.wait()
+        if (team_count > 8 or team_count % 2 == 1):
+            await interaction.response.send_message("대기열에 있는 사람의 수가 이상합니다.",ephemeral=True)
+            return
+        if (auction_count >= 2 or auction_count % 2 == 1):
+            await interaction.response.send_message("경매에 참여한 사람의 수가 이상합니다.",ephemeral=True)
+            return
         
+        cursor.execute("SELECT * FROM team")
+        checklist = cursor.fetchall()
+        button = False
+        
+        await interaction.response.send_message("경매가 시작되었습니다!")
 
-        if(view.name == ""):
-            await interaction.followup.send("유찰되었습니다.")
-            button = True
-        else :
-            await interaction.followup.send(f"경매 종료! 의 가격은 {view.money}")
-            button = True
+        for check in checklist:
+            embed = discord.Embed(
+                title=f"{check[0]}",
+                description=f"{check[1]}",
+                color=discord.Color.blurple()
+            )
+
+            embed.set_thumbnail(url="https://i.namu.wiki/i/zmaUOORwV8b4zdqU7YshHxBknjVqo2OpijLShyYW6f61rBNh_2KzJtjNZxqJ6phjdSX87S9jTR5e9Avg7pt3vQ.webp")
+            embed.add_field(name="Main Position",value=f"{check[3]}", inline=False)
+            embed.add_field(name="Sub Position", value=f"{check[4]}", inline=True)
+            embed.set_footer(text=f"{check[5]}")
+
+            view = AuctionView()
+            message = await interaction.channel.send(view=view,embed=embed)
+            view.message = message
+            await view.wait()
+        
+            if(view.name == ""):
+                await interaction.followup.send("유찰되었습니다.")
+                await asyncio.sleep(1)
+            else :
+                await interaction.followup.send(f"경매 종료! 의 가격은 {view.money}")
+                await asyncio.sleep(1)
+        
+        button = True
+
 
 @client.tree.command(name="embed")
 async def embed_with_button(interaction: discord.Interaction):
+    user = interaction.user
+    user_id = str(interaction.user.id)
+    user_name = user.display_name
     view = AuctionView()
+    cursor.execute("SELECT * FROM team WHERE ID = ?",(user_id,))
+    check = cursor.fetchone()
     embed = discord.Embed(
-        title=f"플레이어 이름",
-        description=f"티어",
+        title=f"{check[0]}",
+        description=f"{check[1]}",
         color=discord.Color.blurple()
     )
+
     embed.set_thumbnail(url="https://i.namu.wiki/i/zmaUOORwV8b4zdqU7YshHxBknjVqo2OpijLShyYW6f61rBNh_2KzJtjNZxqJ6phjdSX87S9jTR5e9Avg7pt3vQ.webp")
-    embed.add_field(name="Main Position", value="첫번째의 값입니다.", inline=False)
-    embed.add_field(name="Sub Position", value="두번째의 값입니다..", inline=True)
-    embed.set_footer(text="푸터입니다..")
+    embed.add_field(name="Main Position",value=f"{check[3]}", inline=False)
+    embed.add_field(name="Sub Position", value=f"{check[4]}", inline=True)
+    embed.set_footer(text=f"{check[5]}")
     await interaction.response.send_message("test")
     message = await interaction.channel.send(embed=embed,view=view)
     view.message = message
