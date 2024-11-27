@@ -156,7 +156,7 @@ async def list_fuction(interaction: discord.Interaction):
         await interaction.response.send_message("지금 참가한 사람이 없습니다.",ephemeral=True)
     else:
         await interaction.response.send_message("지금 게임에 참가한 사람들을 출력합니다")
-        fighter_list = '\n'.join([f'<@{team[6]}>' for team in fighters])
+        fighter_list = '\n'.join([f'<@{team[7]}>' for team in fighters])
         await interaction.followup.send(f'***_player list_***')
         await interaction.followup.send(f'\n{fighter_list}')
 
@@ -735,9 +735,13 @@ async def auction(interaction: discord.Interaction, value : str = ""):
         await interaction.response.send_message("경매가 시작되었습니다!")
 
         checker = True
+        team(team = "team")
+        checklist = cursor.fetchall()
+
         while checker:
-            team(team = "team")
-            checklist = cursor.fetchall()
+
+            attractions = []
+
             for check in checklist:
                 embed = discord.Embed(
                     title=f"{check[0]}",
@@ -757,6 +761,7 @@ async def auction(interaction: discord.Interaction, value : str = ""):
             
                 if(view.name == ""):
                     await interaction.followup.send("유찰되었습니다.")
+                    attractions.append(check)
                     await asyncio.sleep(1)
                 else :
                     await interaction.followup.send(f"경매 종료! {check[0]}의 가격은 {view.money}")
@@ -769,37 +774,30 @@ async def auction(interaction: discord.Interaction, value : str = ""):
                     commit()
                     await asyncio.sleep(1)
             
-            team(team = "team")
-            checklist = cursor.fetchall()
-            if(len(checklist) > 0):
-                checker = True  
+            if(len(attractions) > 0):
+                checklist = attractions
+                checker = True
             else:
                 checker = False
             
         button = True
-
-
-@client.tree.command(name="embed")
-async def embed_with_button(interaction: discord.Interaction):
-    user = interaction.user
-    user_id = str(interaction.user.id)
-    user_name = user.display_name
-    view = AuctionView()
-    cursor.execute("SELECT * FROM team WHERE ID = ?",(user_id,))
-    check = cursor.fetchone()
-    embed = discord.Embed(
-        title=f"{check[0]}",
-        description=f"{check[1]}",
-        color=discord.Color.blurple()
-    )
-
-    embed.set_thumbnail(url="https://i.namu.wiki/i/zmaUOORwV8b4zdqU7YshHxBknjVqo2OpijLShyYW6f61rBNh_2KzJtjNZxqJ6phjdSX87S9jTR5e9Avg7pt3vQ.webp")
-    embed.add_field(name="Main Position",value=f"{check[3]}", inline=False)
-    embed.add_field(name="Sub Position", value=f"{check[4]}", inline=True)
-    embed.set_footer(text=f"{check[5]}")
-    await interaction.response.send_message("test")
-    message = await interaction.channel.send(embed=embed,view=view)
-    view.message = message
+    if(value == "list" or value == "ls" or value == "리스트" or value == "인원"):
+        team(team="team")
+        items = cursor.fetchall()
+        team(team="auction")
+        auctions = cursor.fetchall()
+        if not auctions:
+            await interaction.response.send_message("지금 경매에 참가한 사람이 없습니다.",ephemeral=True)
+        elif not fighters:
+            await interaction.response.send_message("지금 참가한 사람이 없습니다.",ephemeral=True)
+        else:
+            await interaction.response.send_message("지금 게임에 참가한 사람들을 출력합니다")
+            auction_list = '\n'.join([f'<@{auction[7]}>' for auction in auctions])
+            await interaction.followup.send(f'***_auction list_***')
+            await interaction.followup.send(f'\n{auction_list}')
+            item_list = '\n'.join([f'<@{item[7]}>' for item in items])
+            await interaction.followup.send(f'***_waiting list_***')
+            await interaction.followup.send(f'\n{item_list}')
 
 
 minsung_junior = os.getenv('MINSUNGJUNIOR')
