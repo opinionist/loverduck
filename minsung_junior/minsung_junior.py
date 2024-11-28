@@ -716,8 +716,19 @@ async def auction(interaction: discord.Interaction, value : str = ""):
         else:
             await interaction.response.send_message(f"{user_name}님이 경매에 참가합니다.")
             cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,?)",(player[0],player[1],player[2],player[3],player[4],player[5],player[6],player[7],player[8],player[9],team_num,))
-            commit()
             cursor.execute("DELETE FROM team WHERE ID = ?",(user_id,))
+            commit()
+    
+    if(value == "out" or value == "퇴장" or value == "아웃"):
+        cursor.execute("SELECT * FROM auction WHERE ID = ?",(user_id,))
+        check = cursor.fetchone()
+
+        if (check is None):
+            await interaction.response.send_message(f"{user_name}님은 경매에 참여하지 않았습니다.",ephemeral=True)
+        else:
+            await interaction.response.send_message(f"{user_name}님이 경매에서 퇴장합니다.")
+            cursor.execute('INSERT INTO team SELECT * FROM fight WHERE ID = ?', (user_id,))
+            cursor.execute("DELETE FROM auction WHERE ID = ?", (user_id,))
             commit()
 
     if(value == "start" or value == "st" or value == "시작" or value == "스타트"):
@@ -737,6 +748,7 @@ async def auction(interaction: discord.Interaction, value : str = ""):
         checker = True
         team(team = "team")
         checklist = cursor.fetchall()
+        team_limit = (len(checklist) + 2) / 2
 
         while checker:
 
@@ -748,6 +760,31 @@ async def auction(interaction: discord.Interaction, value : str = ""):
                     description=f"{check[1]}",
                     color=discord.Color.blurple()
                 )
+                cursor.execute("SELECT COUNT(*) FROM auction WHERE team_num = 1")
+                one_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM auction WHERE team_num = 2")
+                two_count = cursor.fetchone()[0]
+
+                if (one_count >= team_limit):
+                    checker = False
+                    await interaction.channel.send("!!!경매 종료!!!")
+                    team(team="team")
+                    last_list = cursor.fetchall()
+                    for last in last_list:
+                        cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,2)",(last[0],last[1],last[2],last[3],last[4],last[5],last[6],last[7],last[8],last[9],))
+                    cursor.execute("DELETE FROM team")
+                    commit()
+                    break
+                elif(two_count >= team_limit):
+                    checker = False
+                    await interaction.channel.send("!!!경매 종료!!!")
+                    team(team="team")
+                    last_list = cursor.fetchall()
+                    for last in last_list:
+                        cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,1)",(last[0],last[1],last[2],last[3],last[4],last[5],last[6],last[7],last[8],last[9],))
+                    cursor.execute("DELETE FROM team")
+                    commit()
+                    break
 
                 embed.set_thumbnail(url="https://i.namu.wiki/i/zmaUOORwV8b4zdqU7YshHxBknjVqo2OpijLShyYW6f61rBNh_2KzJtjNZxqJ6phjdSX87S9jTR5e9Avg7pt3vQ.webp")
                 embed.add_field(name="Main Position",value=f"{check[3]}", inline=False)
@@ -773,7 +810,7 @@ async def auction(interaction: discord.Interaction, value : str = ""):
                     cursor.execute("DELETE FROM team WHERE ID = ?",(check[7],))
                     commit()
                     await asyncio.sleep(1)
-            
+                   
             if(len(attractions) > 0):
                 checklist = attractions
                 checker = True
@@ -781,14 +818,15 @@ async def auction(interaction: discord.Interaction, value : str = ""):
                 checker = False
             
         button = True
+
     if(value == "list" or value == "ls" or value == "리스트" or value == "인원"):
         team(team="team")
         items = cursor.fetchall()
         team(team="auction")
         auctions = cursor.fetchall()
-        if not auctions:
+        if not auctions :
             await interaction.response.send_message("지금 경매에 참가한 사람이 없습니다.",ephemeral=True)
-        elif not fighters:
+        elif not items :
             await interaction.response.send_message("지금 참가한 사람이 없습니다.",ephemeral=True)
         else:
             await interaction.response.send_message("지금 게임에 참가한 사람들을 출력합니다")
