@@ -83,12 +83,17 @@ async def in_game(interaction: discord.Interaction):
     teamfind(user=user_id,team="team")
     existing_team = cursor.fetchone()
 
+    teamfind(user = user_id, team="auction")
+    existing_auction = cursor.fetchone()
+
     if existing_fighter is None:
         cursor.execute(f'INSERT INTO fight (name,ID) VALUES (?,?)', (users,user_id,))
         commit()
 
     if existing_team:
-        await interaction.response.send_message(f'**{users}**님은 이미 게임에 참가한 상태입니다!')
+        await interaction.response.send_message(f'**{users}**님은 이미 게임에 참가한 상태입니다!',ephemeral=True)
+    elif existing_auction:
+        await interaction.response.send_message(f'**{users}**님은 경매에 참가한 상태입니다!',ephemeral=True)
     else:
         cursor.execute('INSERT INTO team SELECT * FROM fight WHERE ID = ?', (user_id,))
         commit()
@@ -120,13 +125,18 @@ async def repasdf(interaction: discord.Interaction, mention: discord.Member):
             
         teamfind(user=user_id, team="team")
         existing_team = cursor.fetchone()
+
+        teamfind(user = user_id, team="auction")
+        existing_auction = cursor.fetchone()
             
         if not replace_fighter:
             cursor.execute('INSERT INTO fight (name,ID) VALUES (?,?)', (user_nickname,user_id,))
             commit()
-                
+
         if existing_team:
             await interaction.response.send_message(f'**{user_nickname}**님은 이미 게임에 참가한 상태입니다!',ephemeral=True)
+        elif existing_auction:
+            await interaction.response.send_message(f'**{user_nickname}**님은 경매에 참가한 상태입니다!',ephemeral=True)
         else:
             cursor.execute('INSERT INTO team SELECT * FROM fight WHERE ID = ?', (user_id,))
             commit()
@@ -630,12 +640,17 @@ class AuctionView(View):
         self.timeout = 10
 
     async def process_interaction(self, interaction: discord.Interaction, value: int):
-        self.money += value
         user = interaction.user
         users = user.display_name
         self.ID = str(user.id)
         self.name = users
-        await interaction.response.send_message(f"입찰 금액 : {self.money} - {users}")
+        cursor.execute("SELECT coin FROM auction WHERE id = ?",(self.ID,))
+        coin = cursor.fetchone()[0]
+        if(coin < self.money + value):
+            await interaction.response.send_message("코인이 부족합니다.",ephemeral=True)
+        else:
+            self.money += value
+            await interaction.response.send_message(f"입찰 금액 : {self.money} - {users}")
 
     @discord.ui.button(label="+5", style=discord.ButtonStyle.primary)
     async def button_5(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -672,14 +687,20 @@ class NameInputModal(Modal):
                 raise ValueError("금액은 1 이상이어야 합니다.")
             user = interaction.user
             users = user.display_name
+            user_id = user.id
             self.name = users
+            cursor.execute("SELECT coin FROM auction WHERE id = ?",(user_id,))
+            coin = cursor.fetchone()[0]
+            if(coin < self.auction_view.money + int_value):
+                raise ValueError("코인이 부족합니다.")
+            
             self.auction_view.money += int_value
             self.auction_view.reset_timeout()
             self.auction_view.name = users
             await interaction.response.send_message(f"입찰 금액 : {self.auction_view.money} - {users}")
 
         except ValueError as e:
-            if str(e) == "금액은 1 이상이어야 합니다.":
+            if (str(e) == "금액은 1 이상이어야 합니다." or str(e) == "코인이 부족합니다."):
                 if not interaction.response.is_done():
                     await interaction.response.send_message(f"{str(e)}", ephemeral=True)
             else:
@@ -735,10 +756,10 @@ async def auction(interaction: discord.Interaction, value : str = ""):
         if not (button):
             await interaction.response.send_message("실행하실 수 없습니다.",ephemeral=True)
             return
-        if (team_count > 8 or team_count % 2 == 1):
+        if (team_count > 8 or team_count % 2 == 1 or team_count == 0):
             await interaction.response.send_message("대기열에 있는 사람의 수가 이상합니다.",ephemeral=True)
             return
-        if (auction_count > 2 or auction_count % 2 == 1):
+        if (auction_count > 2 or auction_count % 2 == 1 or auction_count == 0):
             await interaction.response.send_message("경매에 참여한 사람의 수가 이상합니다.",ephemeral=True)
             return
         
@@ -806,9 +827,13 @@ async def auction(interaction: discord.Interaction, value : str = ""):
                     cursor.execute("SELECT team_num FROM auction WHERE ID = ?",(ID,))
                     item_team = cursor.fetchone()[0]
                     cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,?)",(check[0],check[1],check[2],check[3],check[4],check[5],check[6],check[7],check[8],check[9],item_team))
-                    commit()
                     cursor.execute("DELETE FROM team WHERE ID = ?",(check[7],))
                     commit()
+                    cursor.execute('UPDATE auction SET coin = coin - ? WHERE ID = ?', (view.money, ID,))
+                    cursor.execute('UPDATE fight SET coin = coin - ? WHERE ID = ?', (view.money, ID,))
+                    commit()
+
+
                     await asyncio.sleep(1)
                    
             if(len(attractions) > 0):
