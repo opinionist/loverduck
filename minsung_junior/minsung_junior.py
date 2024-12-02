@@ -227,7 +227,7 @@ async def rdasdf(interaction: discord.Interaction):
             
         for voice_channel in all_voice_channels:
             for member in voice_channel.members:
-                member_id = member.id
+                member_id = member.display_name
                 if (member_id,) in team_one_data:
                     target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방")
                     if target_channel: 
@@ -640,17 +640,21 @@ class AuctionView(View):
         self.timeout = 10
 
     async def process_interaction(self, interaction: discord.Interaction, value: int):
-        user = interaction.user
-        users = user.display_name
-        self.ID = str(user.id)
-        self.name = users
-        cursor.execute("SELECT coin FROM auction WHERE id = ?",(self.ID,))
-        coin = cursor.fetchone()[0]
-        if(coin < self.money + value):
+        cursor.execute("SELECT coin FROM auction WHERE id = ?",(interaction.user.id,))
+        coin = cursor.fetchone()
+        
+        if(coin is None):
+            await interaction.response.send_message("당신은 경매에 참여하지 않았습니다.",ephemeral=True)
+        elif(coin[0] < self.money + value):
             await interaction.response.send_message("코인이 부족합니다.",ephemeral=True)
         else:
+            user = interaction.user
+            users = user.display_name
+            self.ID = str(user.id)
+            self.name = users
             self.money += value
             await interaction.response.send_message(f"입찰 금액 : {self.money} - {users}")
+            
 
     @discord.ui.button(label="+5", style=discord.ButtonStyle.primary)
     async def button_5(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -833,7 +837,6 @@ async def auction(interaction: discord.Interaction, value : str = ""):
                     cursor.execute('UPDATE fight SET coin = coin - ? WHERE ID = ?', (view.money, ID,))
                     commit()
 
-
                     await asyncio.sleep(1)
                    
             if(len(attractions) > 0):
@@ -843,6 +846,52 @@ async def auction(interaction: discord.Interaction, value : str = ""):
                 checker = False
             
         button = True
+
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM auction")
+        fighter = cursor.fetchall()
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM auction WHERE team_num = 1")
+        user_id1 = cursor.fetchall()
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM auction WHERE team_num = 2")
+        user_id2 = cursor.fetchall()
+        user_id1 = [item[6] for item in user_id1]
+        user_id2 = [item[6] for item in user_id2]
+
+        cursor.execute("DELETE FROM team_one")
+        cursor.execute("DELETE FROM team_two")
+        commit()
+        for data in fighter:
+            if data[6] in user_id1:
+                cursor.execute('INSERT INTO team_one (name, tire, point, position, subposition, intro, ID) VALUES(?,?,?,?,?,?,?)', data,)
+                commit()
+            elif data[6] in user_id2:
+                cursor.execute('INSERT INTO team_two (name, tire, point, position, subposition, intro, ID) VALUES(?,?,?,?,?,?,?)', data,)
+                commit()
+        
+        cursor.execute('SELECT name FROM team_one')
+        team_one_data = cursor.fetchall()
+        cursor.execute('SELECT name FROM team_two')
+        team_two_data = cursor.fetchall()
+
+        team_one_members = '\n'.join([data[0] for data in team_one_data])
+        team_two_members = '\n'.join([data[0] for data in team_two_data])
+        await interaction.followup.send('팀을 나누겠습니다.')
+        await interaction.followup.send(f'```ansi\n[1;31mTeam 1[0m [1;31;4m\n{team_one_members}[0m```')
+        await interaction.followup.send(f'```ansi\n[1;34mTeam 2[0m [1;34;4m\n{team_two_members}[0m```')
+        all_voice_channels = interaction.guild.voice_channels
+        print(all_voice_channels)
+
+        for voice_channel in all_voice_channels:
+            for member in voice_channel.members:
+                member_id = member.display_name
+                print(member_id)
+                if (member_id) in team_one_data:
+                    target_channel = discord.utils.get(all_voice_channels, name="test")
+                    if target_channel: 
+                        await member.move_to(target_channel)
+                elif (member_id) in team_two_data:
+                    target_channel = discord.utils.get(all_voice_channels, name="test1")
+                    if target_channel:
+                        await member.move_to(target_channel)
 
     if(value == "list" or value == "ls" or value == "리스트" or value == "인원"):
         team(team="team")
