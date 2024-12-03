@@ -173,8 +173,7 @@ async def list_fuction(interaction: discord.Interaction):
 @client.tree.command(description="rd 랜덤 섞기", name='random')  # 플레이어를 섞는 명령어
 @app_commands.checks.cooldown(1, 3.0, key=lambda i: (i.guild_id))
 async def rdasdf(interaction: discord.Interaction):
-    
-        team(team="team")
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM team")
         fighter = cursor.fetchall()
         
         cursor.execute('DELETE FROM team_one')
@@ -186,7 +185,6 @@ async def rdasdf(interaction: discord.Interaction):
             return
         
         min_diff = float('inf')
-        
         teamer = [(data[0], data[2], data[6]) for data in fighter]
         random.shuffle(teamer)
         final_group1, final_group2 = [], []
@@ -227,13 +225,13 @@ async def rdasdf(interaction: discord.Interaction):
             
         for voice_channel in all_voice_channels:
             for member in voice_channel.members:
-                member_id = member.display_name
-                if (member_id,) in team_one_data:
-                    target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방")
+                member_name = member.display_name
+                if member_name in team_one_members:
+                    target_channel = discord.utils.get(all_voice_channels, name="test")
                     if target_channel: 
                         await member.move_to(target_channel)
-                elif (member_id,) in team_two_data:
-                    target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방2")
+                elif member_name in team_two_members:
+                    target_channel = discord.utils.get(all_voice_channels, name="test1")
                     if target_channel:
                         await member.move_to(target_channel)
 
@@ -878,17 +876,16 @@ async def auction(interaction: discord.Interaction, value : str = ""):
         await interaction.followup.send(f'```ansi\n[1;31mTeam 1[0m [1;31;4m\n{team_one_members}[0m```')
         await interaction.followup.send(f'```ansi\n[1;34mTeam 2[0m [1;34;4m\n{team_two_members}[0m```')
         all_voice_channels = interaction.guild.voice_channels
-        print(all_voice_channels)
 
         for voice_channel in all_voice_channels:
             for member in voice_channel.members:
-                member_id = member.display_name
-                print(member_id)
-                if (member_id) in team_one_data:
+                member_name = member.display_name
+                
+                if member_name in team_one_members:
                     target_channel = discord.utils.get(all_voice_channels, name="test")
                     if target_channel: 
                         await member.move_to(target_channel)
-                elif (member_id) in team_two_data:
+                elif member_name in team_two_members:
                     target_channel = discord.utils.get(all_voice_channels, name="test1")
                     if target_channel:
                         await member.move_to(target_channel)
