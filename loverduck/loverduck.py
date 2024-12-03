@@ -163,8 +163,7 @@ async def list_fuction(interaction: discord.Interaction):
 @client.tree.command(description="rd 랜덤 섞기", name='random')  # 플레이어를 섞는 명령어
 @app_commands.checks.cooldown(1, 3.0, key=lambda i: (i.guild_id))
 async def rdasdf(interaction: discord.Interaction):
-    
-        team(team="team")
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM team")
         fighter = cursor.fetchall()
         
         cursor.execute('DELETE FROM team_one')
@@ -176,7 +175,6 @@ async def rdasdf(interaction: discord.Interaction):
             return
         
         min_diff = float('inf')
-        
         teamer = [(data[0], data[2], data[6]) for data in fighter]
         random.shuffle(teamer)
         final_group1, final_group2 = [], []
@@ -217,12 +215,12 @@ async def rdasdf(interaction: discord.Interaction):
             
         for voice_channel in all_voice_channels:
             for member in voice_channel.members:
-                member_id = member.id
-                if (member_id,) in team_one_data:
+                member_name = member.display_name
+                if member_name in team_one_members:
                     target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방")
                     if target_channel: 
                         await member.move_to(target_channel)
-                elif (member_id,) in team_two_data:
+                elif member_name in team_two_members:
                     target_channel = discord.utils.get(all_voice_channels, name="귀찮지만 내전은 하고 싶은 방2")
                     if target_channel:
                         await member.move_to(target_channel)
@@ -586,6 +584,297 @@ async def gb(interaction: discord.Interaction, value : str = ""):
                 await interaction.response.send_message("혼자서는 게임을 못 합니다.",ephemeral=True)
         else:
             await interaction.response.send_message("잘못된 명령어",ephemeral=True)
+
+class AuctionView(View):
+    money = 0
+    name = ""
+    ID = ""
+
+    def __init__(self,timeout: float = 10):
+        super().__init__(timeout=timeout)
+    
+    async def on_timeout(self) -> None:
+        await self.disable_all_items()
+
+    async def disable_all_items(self):
+        for item in self.children:
+            item.disabled = True
+        if self.message:
+            await self.message.edit(view=self)
+
+    def reset_timeout(self):
+        self.timeout = 10
+
+    async def process_interaction(self, interaction: discord.Interaction, value: int):
+        cursor.execute("SELECT coin FROM auction WHERE id = ?",(interaction.user.id,))
+        coin = cursor.fetchone()
+        
+        if(coin is None):
+            await interaction.response.send_message("당신은 경매에 참여하지 않았습니다.",ephemeral=True)
+        elif(coin[0] < self.money + value):
+            await interaction.response.send_message("코인이 부족합니다.",ephemeral=True)
+        else:
+            user = interaction.user
+            users = user.display_name
+            self.ID = str(user.id)
+            self.name = users
+            self.money += value
+            await interaction.response.send_message(f"입찰 금액 : {self.money} - {users}")
+            
+
+    @discord.ui.button(label="+5", style=discord.ButtonStyle.primary)
+    async def button_5(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, 5)
+
+    @discord.ui.button(label="+10", style=discord.ButtonStyle.primary)
+    async def button_10(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, 10)
+
+    @discord.ui.button(label="+50", style=discord.ButtonStyle.primary)
+    async def button_50(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, 50)
+
+    @discord.ui.button(label="+100", style=discord.ButtonStyle.primary)
+    async def button_100(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_interaction(interaction, 100)
+    
+    @discord.ui.button(label="입찰", style=discord.ButtonStyle.primary)
+    async def enter_name_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        modal = NameInputModal(self)
+        await interaction.response.send_modal(modal)
+
+class NameInputModal(Modal):
+    def __init__(self, auction_view: AuctionView):
+        super().__init__(title="입찰")
+        self.auction_view = auction_view
+        self.money_input = TextInput(label="금액", placeholder="입찰 금액을 입력하세요", required=True)
+        self.add_item(self.money_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            int_value = int(self.money_input.value)
+            if int_value < 1:
+                raise ValueError("금액은 1 이상이어야 합니다.")
+            user = interaction.user
+            users = user.display_name
+            user_id = user.id
+            self.name = users
+            cursor.execute("SELECT coin FROM auction WHERE id = ?",(user_id,))
+            coin = cursor.fetchone()[0]
+            if(coin < self.auction_view.money + int_value):
+                raise ValueError("코인이 부족합니다.")
+            
+            self.auction_view.money += int_value
+            self.auction_view.reset_timeout()
+            self.auction_view.name = users
+            await interaction.response.send_message(f"입찰 금액 : {self.auction_view.money} - {users}")
+
+        except ValueError as e:
+            if (str(e) == "금액은 1 이상이어야 합니다." or str(e) == "코인이 부족합니다."):
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"{str(e)}", ephemeral=True)
+            else:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"숫자만 가능합니다.", ephemeral=True)
+
+button = True
+@client.tree.command(name="auction",description="옥션 경매 auc" )
+async def auction(interaction: discord.Interaction, value : str = ""):
+    user = interaction.user
+    user_id = str(interaction.user.id)
+    user_name = user.display_name
+    fightfind(user = user_id)
+    player = cursor.fetchone()
+    global button
+
+    team(team = "team")
+    team_count = len(cursor.fetchall())
+    team(team = "auction")
+    auction_count = len(cursor.fetchall())
+    team_num = 1
+    if(auction_count == 1):
+        team_num = 2
+
+    if(value == "in" or value == "참가" or value == "인"):
+        if(auction_count >= 2):
+            await interaction.response.send_message("경매에 참여하실 수 없습니다.",ephemeral=True)
+            return
+        
+        cursor.execute("SELECT * FROM auction WHERE ID = ?",(user_id,))
+        check = cursor.fetchone()
+        if(check is not None):
+            await interaction.response.send_message(f"{user_name}님은 이미 경매에 참가했습니다.",ephemeral=True)
+        else:
+            await interaction.response.send_message(f"{user_name}님이 경매에 참가합니다.")
+            cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,?)",(player[0],player[1],player[2],player[3],player[4],player[5],player[6],player[7],player[8],player[9],team_num,))
+            cursor.execute("DELETE FROM team WHERE ID = ?",(user_id,))
+            commit()
+    
+    if(value == "out" or value == "퇴장" or value == "아웃"):
+        cursor.execute("SELECT * FROM auction WHERE ID = ?",(user_id,))
+        check = cursor.fetchone()
+
+        if (check is None):
+            await interaction.response.send_message(f"{user_name}님은 경매에 참여하지 않았습니다.",ephemeral=True)
+        else:
+            await interaction.response.send_message(f"{user_name}님이 경매에서 퇴장합니다.")
+            cursor.execute('INSERT INTO team SELECT * FROM fight WHERE ID = ?', (user_id,))
+            cursor.execute("DELETE FROM auction WHERE ID = ?", (user_id,))
+            commit()
+
+    if(value == "start" or value == "st" or value == "시작" or value == "스타트"):
+        if not (button):
+            await interaction.response.send_message("실행하실 수 없습니다.",ephemeral=True)
+            return
+        if (team_count > 8 or team_count % 2 == 1 or team_count == 0):
+            await interaction.response.send_message("대기열에 있는 사람의 수가 이상합니다.",ephemeral=True)
+            return
+        if (auction_count > 2 or auction_count % 2 == 1 or auction_count == 0):
+            await interaction.response.send_message("경매에 참여한 사람의 수가 이상합니다.",ephemeral=True)
+            return
+        
+        button = False
+        await interaction.response.send_message("경매가 시작되었습니다!")
+
+        checker = True
+        team(team = "team")
+        checklist = cursor.fetchall()
+        team_limit = (len(checklist) + 2) / 2
+
+        while checker:
+
+            attractions = []
+
+            for check in checklist:
+                embed = discord.Embed(
+                    title=f"{check[0]}",
+                    description=f"{check[1]}",
+                    color=discord.Color.blurple()
+                )
+                cursor.execute("SELECT COUNT(*) FROM auction WHERE team_num = 1")
+                one_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM auction WHERE team_num = 2")
+                two_count = cursor.fetchone()[0]
+
+                if (one_count >= team_limit):
+                    checker = False
+                    await interaction.channel.send("!!!경매 종료!!!")
+                    team(team="team")
+                    last_list = cursor.fetchall()
+                    for last in last_list:
+                        cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,2)",(last[0],last[1],last[2],last[3],last[4],last[5],last[6],last[7],last[8],last[9],))
+                    cursor.execute("DELETE FROM team")
+                    commit()
+                    break
+                elif(two_count >= team_limit):
+                    checker = False
+                    await interaction.channel.send("!!!경매 종료!!!")
+                    team(team="team")
+                    last_list = cursor.fetchall()
+                    for last in last_list:
+                        cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,1)",(last[0],last[1],last[2],last[3],last[4],last[5],last[6],last[7],last[8],last[9],))
+                    cursor.execute("DELETE FROM team")
+                    commit()
+                    break
+
+                embed.set_thumbnail(url="https://i.namu.wiki/i/zmaUOORwV8b4zdqU7YshHxBknjVqo2OpijLShyYW6f61rBNh_2KzJtjNZxqJ6phjdSX87S9jTR5e9Avg7pt3vQ.webp")
+                embed.add_field(name="Main Position",value=f"{check[3]}", inline=False)
+                embed.add_field(name="Sub Position", value=f"{check[4]}", inline=True)
+                embed.set_footer(text=f"{check[5]}")
+
+                view = AuctionView()
+                message = await interaction.channel.send(view=view,embed=embed)
+                view.message = message
+                await view.wait()
+            
+                if(view.name == ""):
+                    await interaction.followup.send("유찰되었습니다.")
+                    attractions.append(check)
+                    await asyncio.sleep(1)
+                else :
+                    await interaction.followup.send(f"경매 종료! {check[0]}의 가격은 {view.money}")
+                    ID = view.ID
+                    cursor.execute("SELECT team_num FROM auction WHERE ID = ?",(ID,))
+                    item_team = cursor.fetchone()[0]
+                    cursor.execute("INSERT INTO auction values(?,?,?,?,?,?,?,?,?,?,?)",(check[0],check[1],check[2],check[3],check[4],check[5],check[6],check[7],check[8],check[9],item_team))
+                    cursor.execute("DELETE FROM team WHERE ID = ?",(check[7],))
+                    commit()
+                    cursor.execute('UPDATE auction SET coin = coin - ? WHERE ID = ?', (view.money, ID,))
+                    cursor.execute('UPDATE fight SET coin = coin - ? WHERE ID = ?', (view.money, ID,))
+                    commit()
+
+                    await asyncio.sleep(1)
+                   
+            if(len(attractions) > 0):
+                checklist = attractions
+                checker = True
+            else:
+                checker = False
+            
+        button = True
+
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM auction")
+        fighter = cursor.fetchall()
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM auction WHERE team_num = 1")
+        user_id1 = cursor.fetchall()
+        cursor.execute("SELECT name, tire, point, position, subposition, intro, ID FROM auction WHERE team_num = 2")
+        user_id2 = cursor.fetchall()
+        user_id1 = [item[6] for item in user_id1]
+        user_id2 = [item[6] for item in user_id2]
+
+        cursor.execute("DELETE FROM team_one")
+        cursor.execute("DELETE FROM team_two")
+        commit()
+        for data in fighter:
+            if data[6] in user_id1:
+                cursor.execute('INSERT INTO team_one (name, tire, point, position, subposition, intro, ID) VALUES(?,?,?,?,?,?,?)', data,)
+                commit()
+            elif data[6] in user_id2:
+                cursor.execute('INSERT INTO team_two (name, tire, point, position, subposition, intro, ID) VALUES(?,?,?,?,?,?,?)', data,)
+                commit()
+        
+        cursor.execute('SELECT name FROM team_one')
+        team_one_data = cursor.fetchall()
+        cursor.execute('SELECT name FROM team_two')
+        team_two_data = cursor.fetchall()
+
+        team_one_members = '\n'.join([data[0] for data in team_one_data])
+        team_two_members = '\n'.join([data[0] for data in team_two_data])
+        await interaction.followup.send('팀을 나누겠습니다.')
+        await interaction.followup.send(f'```ansi\n[1;31mTeam 1[0m [1;31;4m\n{team_one_members}[0m```')
+        await interaction.followup.send(f'```ansi\n[1;34mTeam 2[0m [1;34;4m\n{team_two_members}[0m```')
+        all_voice_channels = interaction.guild.voice_channels
+
+        for voice_channel in all_voice_channels:
+            for member in voice_channel.members:
+                member_name = member.display_name
+                
+                if member_name in team_one_members:
+                    target_channel = discord.utils.get(all_voice_channels, name="test")
+                    if target_channel: 
+                        await member.move_to(target_channel)
+                elif member_name in team_two_members:
+                    target_channel = discord.utils.get(all_voice_channels, name="test1")
+                    if target_channel:
+                        await member.move_to(target_channel)
+
+    if(value == "list" or value == "ls" or value == "리스트" or value == "인원"):
+        team(team="team")
+        items = cursor.fetchall()
+        team(team="auction")
+        auctions = cursor.fetchall()
+        if not auctions :
+            await interaction.response.send_message("지금 경매에 참가한 사람이 없습니다.",ephemeral=True)
+        elif not items :
+            await interaction.response.send_message("지금 참가한 사람이 없습니다.",ephemeral=True)
+        else:
+            await interaction.response.send_message("지금 게임에 참가한 사람들을 출력합니다")
+            auction_list = '\n'.join([f'<@{auction[7]}>' for auction in auctions])
+            await interaction.followup.send(f'***_auction list_***')
+            await interaction.followup.send(f'\n{auction_list}')
+            item_list = '\n'.join([f'<@{item[7]}>' for item in items])
+            await interaction.followup.send(f'***_waiting list_***')
+            await interaction.followup.send(f'\n{item_list}')
 
 minsung_junior = os.getenv('LOVERDUCK')
 client.run(minsung_junior)
